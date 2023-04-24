@@ -19,6 +19,9 @@ public class PortfolioSearchReq {
 	@JsonProperty("BranchCode")
 	private String branchCode;
 	
+	@JsonProperty("ProductId")
+	private String ProductId;
+	
 	@JsonProperty("Status")
 	private String status;
 
