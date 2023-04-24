@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.maan.Madison.repository.MotorClaimIntimationDtlRepository;
 import com.madison.motor.entity.MotorClaimIntimationDtl;
+import com.madison.motor.repository.MotorClaimIntimationDtlRepository;
 import com.madison.motor.request.InsertClaimIntimationReq;
 import com.madison.motor.request.RejectEditReq;
 import com.madison.motor.response.ClaimIntimationListRes;
