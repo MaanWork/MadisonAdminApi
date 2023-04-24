@@ -10,6 +10,9 @@ import lombok.Setter;
 public class MadisonCommonRes {
 	
 	
+	@JsonProperty("Message")
+	private String message;
+	
 	@JsonProperty("Response")
 	private Object response;
 	

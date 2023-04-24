@@ -54,6 +54,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 				res.setResponse(array_list);
 				res.setResponseStatus("FAILED");
 			}
+			//List<Tuple> list =query.portfolioSearch(req);
 		}catch (Exception e) {
 			log.error(e);
 			e.printStackTrace();

@@ -2,28 +2,22 @@ package com.madison.motor.utilityImpl;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.ParameterExpression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.Hibernate;
-import org.hibernate.criterion.Projection;
-import org.hibernate.criterion.Projections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +25,7 @@ import com.madison.motor.entity.BrokerCompanyMaster;
 import com.madison.motor.entity.HomePositionMaster;
 import com.madison.motor.entity.ListItemValue;
 import com.madison.motor.entity.LoginMaster;
+import com.madison.motor.entity.MotorClaimIntimationDtl;
 import com.madison.motor.entity.MotorDataDetail;
 import com.madison.motor.entity.MotorPolicytypeMaster;
 import com.madison.motor.entity.PaymentDetail;
@@ -38,6 +33,7 @@ import com.madison.motor.entity.PersonalInfo;
 import com.madison.motor.entity.ProductMaster;
 import com.madison.motor.request.GetPortFolioReq;
 import com.madison.motor.request.PortfolioSearchReq;
+import com.madison.motor.request.RejectEditReq;
 
 @Component
 public class CriteriaQueryImpl {
@@ -51,8 +47,13 @@ public class CriteriaQueryImpl {
 	@Autowired
 	private CommonService cs;
 	
+	SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
 	public List<Tuple> portfolioSearch(PortfolioSearchReq req) {
+		req.setBranchCode("01");
+		req.setStatus("Y");
+		req.setStartDate("01/04/2023");
+		req.setEndDate("21/04/2023");
 		List<Predicate> predicates =new ArrayList<Predicate>(10);
 		try {
 			CriteriaBuilder cb =em.getCriteriaBuilder();
@@ -174,4 +175,69 @@ public class CriteriaQueryImpl {
 	}
 	
 
+
+	public List<Tuple> ClaimIntimationList(String status) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<MotorClaimIntimationDtl> mRoot = cq.from(MotorClaimIntimationDtl.class);
+		
+		Expression<String> selectstatus = mRoot.get("status");
+		Expression<Object> casestatus = cb.selectCase(selectstatus)
+				.when("A", "Approved")
+				.when("R", "Rejected")
+				.when("P", "Pending")
+				.otherwise(selectstatus);
+		
+		cq.multiselect(mRoot.get("name").alias("name"),
+				mRoot.get("nrcPassportNo").alias("nrcPassportNo"),
+				mRoot.get("phoneno").alias("phoneno"),
+				mRoot.get("policynumber").alias("policynumber"),
+				mRoot.get("vehicleRefno").alias("vehicleRefno"),
+				mRoot.get("dateofaccident").alias("dateofaccident"),
+				casestatus.alias("status"),
+				mRoot.get("entrydate").alias("entrydate"),
+				mRoot.get("remarks").alias("remarks"),
+				mRoot.get("claimid").alias("claimid"),
+				mRoot.get("claimref").alias("claimref"))
+		
+		.where(cb.equal(mRoot.get("status"), status));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+
+	public List<Tuple> getRejectEdit(RejectEditReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<MotorClaimIntimationDtl> mRoot = cq.from(MotorClaimIntimationDtl.class);
+		
+		cq.multiselect(mRoot.get("name").alias("name"),
+				mRoot.get("nrcPassportNo").alias("nrcPassportNo"),
+				mRoot.get("phoneno").alias("phoneno"),
+				mRoot.get("policynumber").alias("policynumber"),
+				mRoot.get("vehicleRefno").alias("vehicleRefno"),
+				mRoot.get("dateofaccident").alias("dateofaccident"),
+				mRoot.get("status").alias("status"),
+				mRoot.get("entrydate").alias("entrydate"),
+				mRoot.get("remarks").alias("remarks"),
+				mRoot.get("claimid").alias("claimid"),
+				mRoot.get("claimref").alias("claimref"))
+		
+		.where(cb.equal(mRoot.get("policynumber"), req.getPolicyNumber()),
+				cb.equal(mRoot.get("claimref"), req.getClaimref()));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public Long getClaimIdSeq() {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+		Root<MotorClaimIntimationDtl> cRoot = cq.from(MotorClaimIntimationDtl.class);
+		
+		cq.multiselect(cb.coalesce(cb.max(cRoot.get("claimid")), 1));
+		
+		return em.createQuery(cq).getSingleResult();
+		
+	}
+	
 }
