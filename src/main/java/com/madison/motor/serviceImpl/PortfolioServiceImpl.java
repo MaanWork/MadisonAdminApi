@@ -73,7 +73,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 			if(!CollectionUtils.isEmpty(list)) {
 				list.forEach(p ->{
 					GetPortfolioRecordRes portfolioRecordRes =  GetPortfolioRecordRes.builder()
-							.brokerName(p.get("")==null?"":p.get("").toString())
+							.brokerName(p.get("broker_name")==null?"":p.get("broker_name").toString())
 							.customerName(p.get("customer_name")==null?"":p.get("customer_name").toString())
 							.policyEndDate(p.get("expiryDate")==null?"":p.get("expiryDate").toString())
 							.policyStartDate(p.get("inceptionDate")==null?"":p.get("inceptionDate").toString())
@@ -97,7 +97,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 			log.error(e);
 			e.printStackTrace();
 		}
-		return null;
+		return res;
 	}
 	
 	

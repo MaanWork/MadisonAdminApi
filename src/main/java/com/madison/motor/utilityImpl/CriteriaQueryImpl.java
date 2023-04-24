@@ -82,7 +82,7 @@ public class CriteriaQueryImpl {
 			query.multiselect(cb.function("trunc", Date.class,hpm.get("entryDate")).alias("entryDate"),
 				 cb.count(hpm.get("inceptionDate")).alias("count"),hpm.get("productId").alias("productId"))
 				.where(predicateArray)
-				.groupBy(cb.function("trunc", Date.class, hpm.get("entryDate")))
+				.groupBy(cb.function("trunc", Date.class, hpm.get("entryDate")),hpm.get("productId"))
 				.orderBy(cb.desc(cb.function("trunc", Date.class, hpm.get("entryDate"))));
 				
 			
@@ -104,6 +104,21 @@ public class CriteriaQueryImpl {
 			Root<HomePositionMaster> hpm =query.from(HomePositionMaster.class);
 			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
 			
+			
+			Subquery<String> broker_name =query.subquery(String.class);
+			Root<BrokerCompanyMaster> bcm1 =broker_name.from(BrokerCompanyMaster.class);
+			
+			Subquery<String> agency_code=broker_name.subquery(String.class);
+			Root<LoginMaster> lm1 =agency_code.from(LoginMaster.class);
+			
+			Subquery<String> oa_code1=agency_code.subquery(String.class);
+			Root<LoginMaster> lm2 =oa_code1.from(LoginMaster.class);
+			
+			broker_name.select(bcm1.get("companyName")).where(bcm1.get("agencyCode").in(agency_code));
+			oa_code1.select(lm2.get("oaCode")).distinct(true).where(cb.equal(lm2.get("loginId"),hpm.get("loginId")));
+			agency_code.select(lm1.get("agencyCode")).where(lm1.get("agencyCode").in(oa_code1));		
+			
+		
 			Subquery<String> policy_type=query.subquery(String.class);
 			Root<MotorPolicytypeMaster>ptm =policy_type.from(MotorPolicytypeMaster.class);
 			Root<MotorDataDetail>mdd =policy_type.from(MotorDataDetail.class);
@@ -156,15 +171,14 @@ public class CriteriaQueryImpl {
 					hpm.get("loginId").alias("loginId"),cb.function("to_char", Date.class, hpm.get("inceptionDate"),cb.literal("DD/MM/YYYY")).alias("inceptionDate"),
 					cb.function("to_char", Date.class, hpm.get("expiryDate"),cb.literal("DD/MM/YYYY")).alias("expiryDate"),hpm.get("applicationNo").alias("applicationNo"),
 					product_name.alias("product_name"),hpm.get("productId").alias("productId"),policy_type.alias("policy_type"),
-					payment_type.alias("payment_type")
+					payment_type.alias("payment_type"),broker_name.alias("broker_name")
 					)
 				.where(predicate_array);
 			
-			List<Tuple> tuple =em.createQuery(query)
+			return em.createQuery(query)
 					.setParameter("entryDate", req.getEntryDate())
 					.getResultList();
 			
-			System.out.println(tuple);
 
 		}catch (Exception e) {
 			log.error(e);
