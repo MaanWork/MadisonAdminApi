@@ -27,9 +27,6 @@ public class InsertClaimIntimationReq {
 	@JsonProperty("DateofAccident")
 	private String dateofAccident;
 	
-	@JsonProperty("EntryDate")
-	private String entryDate;
-	
 	@JsonProperty("ClaimId")
 	private String claimId;
 	

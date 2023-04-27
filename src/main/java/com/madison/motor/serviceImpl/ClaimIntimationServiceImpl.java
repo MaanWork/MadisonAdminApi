@@ -117,8 +117,11 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 	@Override
 	public MadisonCommonRes InsertClaimIntimation(InsertClaimIntimationReq req) {
 		MadisonCommonRes res = new MadisonCommonRes();
+		Long ClaimRefSeq = null;
 		try {
-				Long ClaimIdSeq = query.getClaimIdSeq();
+			if(StringUtils.isBlank(req.getClaimRef()))
+				ClaimRefSeq = query.getClaimRefSeq();
+				Long ClaimId = query.getClaimIdSum();
 				MotorClaimIntimationDtl insertClaim = MotorClaimIntimationDtl.builder()
 					.name(StringUtils.isBlank(req.getName())?"":req.getName())
 					.nrcPassportNo(StringUtils.isBlank(req.getNrcPassportNo())?"":req.getNrcPassportNo())
@@ -127,9 +130,9 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 					.vehicleRefno(StringUtils.isBlank(req.getVehicleRegNo())?"":req.getVehicleRegNo())
 					.dateofaccident(StringUtils.isBlank(req.getDateofAccident())?null:sdf.parse(req.getDateofAccident()))
 					.entrydate(new Date())
-					.claimid(StringUtils.isBlank(req.getClaimId())? ClaimIdSeq : Long.valueOf(req.getClaimId()))
+					.claimid(StringUtils.isBlank(req.getClaimId())? ClaimId : Long.valueOf(req.getClaimId()))
 					.status(StringUtils.isBlank(req.getStatus())? "P" : req.getStatus())
-					.claimref(StringUtils.isBlank(req.getClaimRef())?null:Long.valueOf(req.getClaimRef()))
+					.claimref(StringUtils.isBlank(req.getClaimRef())?ClaimRefSeq:Long.valueOf(req.getClaimRef()))
 					.remarks(req.getRemarks())
 					.statusupdate(("R".equalsIgnoreCase(req.getStatus()))? new Date():null)
 					.build();
