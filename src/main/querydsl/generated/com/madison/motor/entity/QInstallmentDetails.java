@@ -31,11 +31,11 @@ public class QInstallmentDetails extends EntityPathBase<InstallmentDetails> {
 
     public final NumberPath<Long> installmentNo = createNumber("installmentNo", Long.class);
 
-    public final NumberPath<Long> loofterms = createNumber("loofterms", Long.class);
-
     public final NumberPath<Long> noofemi = createNumber("noofemi", Long.class);
 
     public final NumberPath<Long> noofmonths = createNumber("noofmonths", Long.class);
+
+    public final NumberPath<Long> noofterms = createNumber("noofterms", Long.class);
 
     public final NumberPath<Long> overallpremium = createNumber("overallpremium", Long.class);
 

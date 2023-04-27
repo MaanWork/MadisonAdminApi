@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import com.madison.motor.request.GetEmiReportReq;
 import com.madison.motor.request.RoadAssistantListReq;
 import com.madison.motor.response.GetEmiReportCountRes;
+import com.madison.motor.response.GetEmiReportListRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.response.RoadAssistantListRes;
 import com.madison.motor.service.ResportService;
@@ -105,9 +106,44 @@ public class ResportServiceImpl implements ResportService{
 	@Override
 	public MadisonCommonRes GetEmiReportList(GetEmiReportReq req) throws ParseException {
 		MadisonCommonRes res = new MadisonCommonRes();
-		
-		List<Tuple> list = query.GetEmiReportList(req);
-		return null;
+		List<GetEmiReportListRes> response = new ArrayList<GetEmiReportListRes>();
+		try {
+			List<Tuple> list = query.GetEmiReportList(req);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(m->{
+					GetEmiReportListRes k = GetEmiReportListRes.builder()
+						.quoteNo(m.get("quoteNo")==null?"":m.get("quoteNo").toString())
+						.paymentMode(m.get("paymentmode")==null?"":m.get("paymentmode").toString())
+						.customerName(m.get("customername")==null?"":m.get("customername").toString())
+						.overallPremium(m.get("overallpremium")==null?"":m.get("overallpremium").toString())
+						.premiumAmount(m.get("premiumamount")==null?"":m.get("premiumamount").toString())
+						.premiumDate(m.get("premiumdate")==null?"":DateFormat(m.get("premiumdate")).toString())
+						.noofMonths(m.get("noofmonths")==null?"":m.get("noofmonths").toString())
+						.noofEmi(m.get("noofemi")==null?"":m.get("noofemi").toString())
+						.applicationNo(m.get("applicationNo")==null?"":m.get("applicationNo").toString())
+						.noofTerms(m.get("noofterms")==null?"":m.get("noofterms").toString())
+						.remarks(m.get("remarks")==null?"":m.get("remarks").toString())
+						.installmentNo(m.get("installmentNo")==null?"":m.get("installmentNo").toString())
+						.status(m.get("status")==null?"":m.get("status").toString())
+						.balanceAmount(m.get("balanceamount")==null?"":m.get("balanceamount").toString())
+						.description(m.get("description")==null?"":m.get("description").toString())
+						.productId(m.get("productId")==null?"":m.get("productId").toString())
+						.policyNo(m.get("policyNo")==null?"":m.get("policyNo").toString())
+						.paymentStatus(m.get("paymentstatus")==null?"":m.get("paymentstatus").toString())
+						.build();
+					response.add(k);
+				});
+				res.setMessage("SUCCESS");
+				res.setResponse(response);
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse(response);
+			}
+		} catch (ParseException e) {
+			log.info(e);
+			e.printStackTrace();
+		}
+		return res;
 	}
 
 }

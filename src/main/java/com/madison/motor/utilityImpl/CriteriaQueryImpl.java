@@ -452,18 +452,18 @@ public class CriteriaQueryImpl {
 				customername.alias("customername"),
 				iRoot.get("overallpremium").alias("overallpremium"),
 				iRoot.get("premiumamount").alias("premiumamount"),
-				iRoot.get("premium_date").alias("premium_date"),
+				iRoot.get("premiumdate").alias("premiumdate"),
 				iRoot.get("noofmonths").alias("noofmonths"),
 				iRoot.get("noofemi").alias("noofemi"),
 				iRoot.get("applicationNo").alias("applicationNo"),
-				iRoot.get("loofterms").alias("loofterms"),
+				iRoot.get("noofterms").alias("noofterms"),
 				iRoot.get("remarks").alias("remarks"),
 				iRoot.get("installmentNo").alias("installmentNo"),
 				iRoot.get("status").alias("status"),
 				iRoot.get("balanceamount").alias("balanceamount"),
 				iRoot.get("description").alias("description"),
 				iRoot.get("productId").alias("productId"),
-				iRoot.get("policyNo").alias("policyNo"),
+				hRoot.get("policyNo").alias("policyNo"),
 				cb.selectCase().when(cb.equal(iRoot.get("paymentstatus"), "Y"), "Success")
 				.otherwise("Pending").alias("paymentstatus"))
 		

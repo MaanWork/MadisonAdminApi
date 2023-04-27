@@ -61,7 +61,7 @@ public class InstallmentDetails implements Serializable{/**
 	private Long noofemi;
 	
 	@Column(name = "NO_OF_TERMS")
-	private Long loofterms;
+	private Long noofterms;
 	
 	@Column(name = "REMARKS")
 	private String remarks;
