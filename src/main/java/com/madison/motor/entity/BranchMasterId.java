@@ -33,6 +33,8 @@ public class BranchMasterId implements Serializable {
     private String     branchCode ;
     
     private BigDecimal amendId ;
+
+	
     
      
 }

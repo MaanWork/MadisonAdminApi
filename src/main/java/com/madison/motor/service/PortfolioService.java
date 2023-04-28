@@ -1,6 +1,7 @@
 package com.madison.motor.service;
 
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
@@ -22,5 +23,9 @@ public interface PortfolioService {
 	MadisonCommonRes getQuotePremiumInfo(String applicationNo);
 
 	MadisonCommonRes updateQuotePremium(UpdateQuotePremiumReq req);
+
+	MadisonCommonRes modifyRate(ModifyRateReq req);
+
+	MadisonCommonRes editModifyRate(String applicationNo, String vehicleId);
 
 }

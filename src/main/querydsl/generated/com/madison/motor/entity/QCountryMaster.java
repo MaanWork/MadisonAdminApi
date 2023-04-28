@@ -19,25 +19,25 @@ public class QCountryMaster extends EntityPathBase<CountryMaster> {
 
     public static final QCountryMaster countryMaster = new QCountryMaster("countryMaster");
 
-    public final NumberPath<Long> amendid = createNumber("amendid", Long.class);
+    public final NumberPath<Long> amendId = createNumber("amendId", Long.class);
 
-    public final NumberPath<Long> countryid = createNumber("countryid", Long.class);
+    public final NumberPath<Long> countryId = createNumber("countryId", Long.class);
 
-    public final StringPath countryname = createString("countryname");
+    public final StringPath countryName = createString("countryName");
 
-    public final StringPath countryshortname = createString("countryshortname");
+    public final StringPath countryShortName = createString("countryShortName");
 
-    public final DateTimePath<java.util.Date> effectivedate = createDateTime("effectivedate", java.util.Date.class);
+    public final DateTimePath<java.util.Date> effectiveDate = createDateTime("effectiveDate", java.util.Date.class);
 
-    public final NumberPath<Long> georate = createNumber("georate", Long.class);
+    public final NumberPath<Long> geoRate = createNumber("geoRate", Long.class);
 
-    public final StringPath intportcode = createString("intportcode");
+    public final StringPath intPortCode = createString("intPortCode");
 
-    public final StringPath nationalityname = createString("nationalityname");
+    public final StringPath nationalityName = createString("nationalityName");
 
     public final StringPath remarks = createString("remarks");
 
-    public final StringPath rsacode = createString("rsacode");
+    public final StringPath rsaCode = createString("rsaCode");
 
     public final NumberPath<Long> sno = createNumber("sno", Long.class);
 

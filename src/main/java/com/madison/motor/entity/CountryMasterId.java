@@ -3,24 +3,21 @@ package com.madison.motor.entity;
 import java.io.Serializable;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@Builder
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
-public class CountryMasterId implements Serializable{/**
+@AllArgsConstructor
+public class CountryMasterId implements Serializable {
+	
+	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 3537959716101080753L;
+
+	private Long countryId;
 	
-	//ENTER INTO PRIMARY KEY
-	private Long countryid;
-	
-	private Long amendid;
+	private Long amendId;
 
 }

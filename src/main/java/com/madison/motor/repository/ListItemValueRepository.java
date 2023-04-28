@@ -15,8 +15,11 @@ package com.madison.motor.repository;
 import java.util.List;
 import java.util.Map;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.madison.motor.entity.ListItemValue;
@@ -37,4 +40,22 @@ public interface ListItemValueRepository  extends JpaRepository<ListItemValue,Li
 	
 	@Query(value="SELECT branch_code, branch_name FROM branch_master WHERE branch_code IN( SELECT DISTINCT( regexp_substr(lc_login, '[^,]+', 1, level)) lc_login FROM ( SELECT attached_branch lc_login FROM login_master WHERE login_id =?1) b CONNECT BY level <= length(lc_login) - length(replace(lc_login, ',', '')) + 1 AND lc_login IS NOT NULL ) AND status = 'Y'",nativeQuery=true)
 	List<Map<String,Object>>getBranchByLoginId(String loginId);
+	
+	@Query(value="SELECT sno code, condition_id, coreappcode, condition_desc code_desc FROM motor_condition_master WHERE policy_type_id =?1 AND condition_type = 'CONDITION' AND sno NOT IN( SELECT coreappcode FROM motor_clauses_info WHERE quote_no =?2 AND coreappcode IS NOT NULL) AND status = 'Y' ORDER BY sno",nativeQuery=true)
+	List<Map<String,Object>> getConditionList(String policyType,String quoteNo);
+
+	@Query(value ="SELECT CODE,CODE_DESC,COREAPPCODE FROM MOTOR_CLAUSES_INFO WHERE QUOTE_NO=?1 AND CON_TYPE='1' ORDER BY CODE",nativeQuery=true)
+	List<Map<String, Object>> editConditionList(String quoteNo);
+	
+	@Modifying
+	@Transactional
+	@Query(value="DELETE FROM MOTOR_CLAUSES_INFO WHERE QUOTE_NO=?1 AND COREAPPCODE=?2",nativeQuery=true)
+	int deleteConditionList(String quoteNo,String coreAppCode);
+	
+	@Modifying
+	@Transactional
+	@Query(value="INSERT INTO MOTOR_CLAUSES_INFO (SNO,QUOTE_NO,CON_TYPE,CON_TYPE_DESC,CODE,CODE_DESC,ENTRY_DATE,STATUS,REMARKS,COREAPPCODE) VALUES ((SELECT NVL(MAX(SNO )+1,1) FROM MOTOR_CLAUSES_INFO),?1,?2,?3,(SELECT NVL(MAX(CODE )+1,1) FROM MOTOR_CLAUSES_INFO WHERE CON_TYPE=?4 AND QUOTE_NO=?5),?6,SYSDATE,?7,?8,?9)",nativeQuery=true)
+	int insertCondition(String quoteNo, String string2, String string3, String string4, String string5, String string6, String string7, String string8, String string9);
+	
+
 }

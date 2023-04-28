@@ -19,6 +19,8 @@ import org.springframework.util.CollectionUtils;
 
 import com.madison.motor.entity.ListItemValue;
 import com.madison.motor.repository.ListItemValueRepository;
+import com.madison.motor.request.GetConditionReq;
+import com.madison.motor.request.InsertConditionReq;
 import com.madison.motor.response.DropdownRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.service.DropDownService;
@@ -86,6 +88,97 @@ public class DropDownServiceImpl implements DropDownService{
 		}catch (Exception e) {
 			log.error(e);
 			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getReferalStatus() {
+		MadisonCommonRes response = new MadisonCommonRes();
+		try {
+			List<DropdownRes> list = new ArrayList<DropdownRes>();
+			list.add(new DropdownRes( "Y","Accept"));
+			list.add(new DropdownRes( "N","Reject"));
+			list.add(new DropdownRes( "A","Pending"));
+			
+			response.setMessage("SUCCESS");
+			response.setResponse(list);
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return response;
+	}
+
+	@Override
+	public MadisonCommonRes getConditionList(GetConditionReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		Set<DropdownRes> resList =new HashSet<DropdownRes>();
+		try {
+			List<Map<String,Object>> list=listItemRepo.getConditionList(req.getPolicyTypeId(), req.getQuoteNo());
+			if(list.size()>0) {
+					list.forEach(p ->{
+						DropdownRes r =DropdownRes.builder()
+							.code(p.get("COREAPPCODE")==null?"":p.get("COREAPPCODE").toString())
+							.description(p.get("CODE_DESC")==null?"":p.get("CODE_DESC").toString())
+							.build();
+					resList.add(r);
+					});
+				res.setMessage("SUCCESS");
+				res.setResponse(resList);
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse(resList);
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes editConditionList(String quoteNo) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		Set<DropdownRes> resList =new HashSet<DropdownRes>();
+		try {
+			List<Map<String,Object>> list=listItemRepo.editConditionList(quoteNo);
+			if(list.size()>0) {
+					list.forEach(p ->{
+						DropdownRes r =DropdownRes.builder()
+							.code(p.get("COREAPPCODE")==null?"":p.get("COREAPPCODE").toString())
+							.description(p.get("CODE_DESC")==null?"":p.get("CODE_DESC").toString())
+							.build();
+					resList.add(r);
+					});
+				res.setMessage("SUCCESS");
+				res.setResponse(resList);
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse(resList);
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes insertCondition(List<InsertConditionReq> req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		try {
+			for(InsertConditionReq r :req) {
+				listItemRepo.deleteConditionList(r.getQuoteNo(), r.getCoreAppCode());
+				listItemRepo.insertCondition(r.getQuoteNo(),"1","CONDITION","1",r.getQuoteNo(),r.getDescription(),"Y","",r.getCoreAppCode());
+			}
+			res.setMessage("SUCCESS");
+			res.setResponse("Inserted successfully");
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+			res.setMessage("FAILED");
+			res.setResponse("Inserted failed");
 		}
 		return res;
 	}

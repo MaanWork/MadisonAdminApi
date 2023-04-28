@@ -31,5 +31,5 @@ public class PremiumRes {
 	private String description;
 	@JsonProperty("OpcoverDesc")
 	private String opcoverDesc;
-	
+
 }

@@ -18,10 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import com.madison.motor.entity.HomePositionMaster;
 import com.madison.motor.entity.MotorDataDetail;
 import com.madison.motor.repository.HomePositionMasterRepository;
 import com.madison.motor.repository.MotorDataDetailRepository;
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.ModifyRateDetReq;
+import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
@@ -212,6 +215,8 @@ public class PortfolioServiceImpl implements PortfolioService{
 								.sumInsured(v.get("sumInsured")==null?"":v.get("sumInsured").toString())
 								.rate(v.get("rate")==null?"":v.get("rate").toString())
 								.premium(v.get("premium")==null?"":v.get("premium").toString())
+								.vehicleId(vehicleId.toString())
+								.policyTypeCoverId(v.get("policytypeCoverid")==null?"":v.get("policytypeCoverid").toString())
 								.build(); 
 						premium_list.add(premiumRes);
 						
@@ -344,11 +349,96 @@ public class PortfolioServiceImpl implements PortfolioService{
 			}
 			query.updatePolicyPremium(net_premium, policy_tax, excessSign, excessAmount,net_premium,commision_fee,
 					quoteNo,req);
+			response.setMessage("SUCCESS");
+			response.setResponse("Premium updated successfully");
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+			response.setMessage("FAILED");
+			response.setResponse("Something went wrong contact admin...!");
+		}
+		return response;
+	}
+
+
+	@Override
+	public MadisonCommonRes modifyRate(ModifyRateReq req) {
+		MadisonCommonRes response = new MadisonCommonRes();
+		log.info("modifyRate request :"+cs.printReq(req));
+		try {
+			List<ModifyRateDetReq> modifyList =req.getModifyRate();
+			for (ModifyRateDetReq rate :modifyList) {
+				query.updateVehiclePremimByVehicleId(req.getApplicationNo(),req.getVehicleId(),req.getCurrencyType(),rate);		
+			}	
+			Double premimum=0D;
+			Double electrical_pre=0D;
+			Double nonelectrical_pre=0D;
+			List<Tuple> mpcdList = query.getMotorPolicyCoverData(req.getApplicationNo(), req.getVehicleId());
+			for(Tuple t :mpcdList) {
+				String coverId=t.get("policytypeCoverid")==null?"":t.get("policytypeCoverid").toString();
+				if("0".equals(coverId)) {
+					premimum=t.get("sumInsured")==null?0D:Double.valueOf(t.get("sumInsured").toString());
+				}else if("101".equals(coverId)) {
+					electrical_pre=t.get("sumInsured")==null?0D:Double.valueOf(t.get("sumInsured").toString());
+				}else if ("102".equals(coverId)) {
+					nonelectrical_pre =t.get("sumInsured")==null?0D:Double.valueOf(t.get("sumInsured").toString());
+				}
+			}
 			
+			query.updateMotorDataDetailByAppNoAndVehId(req.getApplicationNo(), req.getVehicleId(),
+					req.getCurrencyType(),premimum,electrical_pre,nonelectrical_pre);
+			
+			HomePositionMaster hpm =hpmRepo.findByApplicationNo(new BigDecimal(req.getApplicationNo()));
+			query.callProcedure(req.getApplicationNo(),req.getVehicleId(),hpm.getBranchCode(),hpm.getProductId());
+			response.setMessage("SUCCESS");
+			response.setResponse("Premium updated successfully");
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+			response.setMessage("FAILED");
+			response.setResponse("Something went wrong contact admin...!");
+		}
+		return response;
+	}
+
+
+	@Override
+	public MadisonCommonRes editModifyRate(String applicationNo, String vehicleId) {
+		MadisonCommonRes commonRes = new MadisonCommonRes();
+		VehiclePremiumInfoRes response =new VehiclePremiumInfoRes();
+		try {
+			List<Tuple> list =query.editModifyRate(applicationNo, vehicleId);
+			if(!CollectionUtils.isEmpty(list)) {
+				List<PremiumRes> premium_list=new ArrayList<PremiumRes>();
+				list.forEach(v ->{
+						PremiumRes premiumRes =PremiumRes.builder()
+								.description(v.get("groupDesc")==null?"":v.get("groupDesc").toString())
+								.sumInsured(v.get("sumInsured")==null?"":v.get("sumInsured").toString())
+								.rate(v.get("rate")==null?"":v.get("rate").toString())
+								.premium(v.get("premium")==null?"":v.get("premium").toString())
+								.vehicleId(vehicleId.toString())
+								.policyTypeCoverId(v.get("policytypeCoverid")==null?"":v.get("policytypeCoverid").toString())
+								.build(); 
+						premium_list.add(premiumRes);
+				});
+				MotorDataDetail mdd =mddRepo.findByApplicationNoAndVehicleId(new BigDecimal(applicationNo),new BigDecimal(vehicleId));
+				response.setMake(StringUtils.isBlank(mdd.getMakeName())?"":mdd.getMakeName());
+				response.setModel(StringUtils.isBlank(mdd.getModelName())?"":mdd.getModelName());
+				response.setVehicleUsage(StringUtils.isBlank(mdd.getVehicleUsageName())?"":mdd.getVehicleUsageName());
+				response.setVehcileId(vehicleId);
+				response.setApplicationNo(applicationNo);
+				response.setPremium(premium_list);
+				
+				commonRes.setMessage("SUCCESS");
+				commonRes.setResponse(response);
+			}else {
+				commonRes.setMessage("FAILED");
+				commonRes.setResponse(null);
+			}
 		}catch (Exception e) {
 			log.error(e);
 			e.printStackTrace();
 		}
-		return response;
+		return commonRes;
 	}
 }

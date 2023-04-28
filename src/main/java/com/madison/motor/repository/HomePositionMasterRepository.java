@@ -12,6 +12,8 @@
 
 package com.madison.motor.repository;
 
+import java.math.BigDecimal;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -28,5 +30,7 @@ import com.madison.motor.entity.HomePositionMasterId;
  
  
 public interface HomePositionMasterRepository  extends JpaRepository<HomePositionMaster,HomePositionMasterId > , JpaSpecificationExecutor<HomePositionMaster> {
+
+	HomePositionMaster findByApplicationNo(BigDecimal bigDecimal);
 
 }

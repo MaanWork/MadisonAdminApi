@@ -11,10 +11,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.StoredProcedureQuery;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaBuilder.Trimspec;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Expression;
@@ -51,6 +54,7 @@ import com.madison.motor.entity.ProductMaster;
 import com.madison.motor.entity.RoadSideAssistantDetails;
 import com.madison.motor.request.GetEmiReportReq;
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.ModifyRateDetReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
@@ -60,6 +64,7 @@ import com.madison.motor.request.UpdateQuotePremiumReq;
 
 @Component
 public class CriteriaQueryImpl {
+	
 	
 	Logger log =LogManager.getLogger(CriteriaQueryImpl.class);
 	
@@ -261,218 +266,15 @@ public class CriteriaQueryImpl {
 		return em.createQuery(cq).getResultList();
 	}
 
-	public Long getClaimIdSum() {
+	public Long getClaimIdSeq() {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Long> cq = cb.createQuery(Long.class);
 		Root<MotorClaimIntimationDtl> cRoot = cq.from(MotorClaimIntimationDtl.class);
 		
-		cq.multiselect(cb.coalesce(cb.max(cb.sum(cRoot.get("claimid"), 1L)), 1L).alias("claimid"));
+		cq.multiselect(cb.coalesce(cb.max(cRoot.get("claimid")), 1));
 		
-		return em.createQuery(cq).getSingleResult().longValue();
+		return em.createQuery(cq).getSingleResult();
 		
-	}
-
-	public Long getClaimRefSeq() {
-		Query q = em.createNativeQuery("select MOTOR_CLAIM_INTIMATION_SEQ.nextval from dual");		
-		Long nextVal = ((BigDecimal)q.getSingleResult()).longValue();
-		return nextVal;
-	}
-
-	public List<Tuple> ForeignExchangeList() {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
-		Root<ExchangeMaster> eRoot = cq.from(ExchangeMaster.class);
-		
-		Subquery<String> currencyname = cq.subquery(String.class);
-		Root<CurrencyMaster> cRoot = currencyname.from(CurrencyMaster.class);
-		
-		currencyname.select(cRoot.get("currencyname"))
-		.where(cb.equal(cRoot.get("currencyid"), eRoot.get("currencyId")));
-		
-		Expression<String> selectstatus = eRoot.get("status");
-		Expression<Object> casestatus = cb.selectCase(selectstatus)
-				.when("Y", "Active")
-				.when("N", "DeActive")
-				.otherwise(selectstatus);
-		
-		Subquery<String> countryname = cq.subquery(String.class);
-		Root<CountryMaster> cmRoot =countryname.from(CountryMaster.class);
-		
-		countryname.select(cmRoot.get("countryname"))
-		.where(cb.equal(cmRoot.get("countryid"), eRoot.get("countryId")));
-		
-		Subquery<Integer> amdSub = cq.subquery(Integer.class);
-		Root<ExchangeMaster> amRoot = amdSub.from(ExchangeMaster.class);
-		
-		amdSub.select(cb.max(amRoot.get("amendid")))
-		.where(cb.equal(amRoot.get("exchId"), eRoot.get("exchId")));
-		
-		cq.multiselect(eRoot.get("exchId").alias("exchId"),
-				eRoot.get("exchRate").alias("exchRate"),
-				eRoot.get("currencyId").alias("currencyId"),
-				currencyname.alias("currencyname"),
-				eRoot.get("amendid").alias("amendid"),
-				eRoot.get("incepDate").alias("incepDate"),
-				eRoot.get("expirydate").alias("expirydate"),
-				eRoot.get("effectivedate").alias("effectivedate"),
-				eRoot.get("entrydate").alias("entrydate"),
-				eRoot.get("remarks").alias("remarks"),
-				casestatus.alias("status"),
-				eRoot.get("rsacode").alias("rsacode"),
-				eRoot.get("sno").alias("sno"),
-				eRoot.get("countryId").alias("countryId"),
-				countryname.alias("countryname"),
-				eRoot.get("displayorder").alias("displayorder"))
-		
-		.where(cb.equal(eRoot.get("amendid"), amdSub))
-		.orderBy(cb.asc(eRoot.get("sno")));
-		
-		return em.createQuery(cq).getResultList();
-	}
-
-	public List<Tuple> EditForeignExchange(String exchangeId) {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
-		Root<ExchangeMaster> eRoot = cq.from(ExchangeMaster.class);
-		
-		Subquery<String> currencyname = cq.subquery(String.class);
-		Root<CurrencyMaster> cRoot = currencyname.from(CurrencyMaster.class);
-		
-		currencyname.select(cRoot.get("currencyname"))
-		.where(cb.equal(cRoot.get("currencyid"), eRoot.get("currencyId")));
-		
-		Subquery<String> countryname = cq.subquery(String.class);
-		Root<CountryMaster> cmRoot = countryname.from(CountryMaster.class);
-		
-		countryname.select(cmRoot.get("countryname"))
-		.where(cb.equal(cmRoot.get("countryid"), eRoot.get("countryId")));
-		
-		Subquery<Integer> amdSub = cq.subquery(Integer.class);
-		Root<ExchangeMaster> amdRoot = amdSub.from(ExchangeMaster.class);
-		
-		amdSub.select(cb.max(amdRoot.get("amendid")))
-		.where(cb.equal(amdRoot.get("exchId"), eRoot.get("exchId")));
-		
-		cq.multiselect(eRoot.get("exchId").alias("exchId"),
-				eRoot.get("exchRate").alias("exchRate"),
-				eRoot.get("currencyId").alias("currencyId"),
-				currencyname.alias("currencyname"),
-				eRoot.get("amendid").alias("amendid"),
-				eRoot.get("incepDate").alias("incepDate"),
-				eRoot.get("expirydate").alias("expirydate"),
-				eRoot.get("effectivedate").alias("effectivedate"),
-				eRoot.get("entrydate").alias("entrydate"),
-				eRoot.get("remarks").alias("remarks"),
-				eRoot.get("status").alias("status"),
-				eRoot.get("rsacode").alias("rsacode"),
-				eRoot.get("sno").alias("sno"),
-				eRoot.get("countryId").alias("countryId"),
-				countryname.alias("countryname"),
-				eRoot.get("displayorder").alias("displayorder"))
-		
-		.where(cb.equal(eRoot.get("amendid"), amdSub),
-				cb.equal(eRoot.get("exchId"), exchangeId));
-		
-		return em.createQuery(cq).getResultList();
-	}
-
-	public List<Tuple> getRoadAssistantList(RoadAssistantListReq req) throws ParseException {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
-		Root<RoadSideAssistantDetails> rRoot = cq.from(RoadSideAssistantDetails.class);
-		
-		Expression<Object> selectdevice = cb.selectCase().when(cb.equal(rRoot.get("deviceId"), "HYBRID"), "Mobile").otherwise("Webapp");
-		
-		Expression<Object> selectstatus = cb.selectCase().when(cb.equal(rRoot.get("status"), "P"), "PROCESSED")
-				.when(cb.equal(rRoot.get("status"), "C"), "CLOSED").otherwise("OPEN");
-		
-		cq.multiselect(rRoot.get("refNo").alias("refNo"),
-				rRoot.get("mobileno").alias("mobileno"),
-				rRoot.get("policyNo").alias("policyNo"),
-				rRoot.get("customerName").alias("customerName"),
-				rRoot.get("assistantType").alias("assistantType"),
-				rRoot.get("descripition").alias("descripition"),
-				rRoot.get("logitude").alias("logitude"),
-				rRoot.get("latitude").alias("latitude"),
-				selectdevice.alias("deviceId"),
-				rRoot.get("entrydate").alias("entrydate"),
-				rRoot.get("location").alias("location"),
-				selectstatus.alias("status"),
-				rRoot.get("remarks").alias("remarks"),
-				rRoot.get("mailId").alias("mailId"),
-				rRoot.get("updatedate").alias("updatedate"),
-				rRoot.get("customerfeedback").alias("customerfeedback"))
-		
-		.where(cb.between(cb.function("trunc", Date.class, rRoot.get("entrydate")), sdf.parse(req.getFromDate()), sdf.parse(req.getToDate())))
-		.orderBy(cb.asc(rRoot.get("refNo")));
-		
-		return em.createQuery(cq).getResultList();
-	}
-
-	public List<Tuple> GetEmiReportCount(GetEmiReportReq req) throws ParseException {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
-		Root<InstallmentDetails> iRoot = cq.from(InstallmentDetails.class);
-		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
-		
-		cq.multiselect(cb.sum(iRoot.get("premiumamount")).alias("premiumamount"),
-				cb.count(iRoot).alias("emiduecount"))
-		.where(cb.equal(hRoot.get("quoteNo"), iRoot.get("quoteNo")),
-				cb.equal(hRoot.get("status"), "P"),
-				cb.equal(iRoot.get("status"), "Y"),
-				cb.between(cb.function("trunc", Date.class, iRoot.get("premiumdate")), sdf.parse(req.getStartDate()), sdf.parse(req.getEndDate())),
-				cb.equal(iRoot.get("productId"), req.getProductId()));
-		
-		return em.createQuery(cq).getResultList();
-	}
-
-	public List<Tuple> GetEmiReportList(GetEmiReportReq req) throws ParseException {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> cq= cb.createQuery(Tuple.class);
-		Root<InstallmentDetails> iRoot = cq.from(InstallmentDetails.class);
-		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
-		
-		Subquery<String> paymentmode = cq.subquery(String.class);
-		Root<ListItemValue> pmRoot = paymentmode.from(ListItemValue.class);
-		
-		paymentmode.select(pmRoot.get("itemValue"))
-		.where(cb.equal(hRoot.get("paymentMode"), pmRoot.get("itemCode")),
-				cb.equal(pmRoot.get("itemType"), "PAYMENTTYPE"));
-		
-		Subquery<String> customername = cq.subquery(String.class);
-		Root<PersonalInfo> pRoot = customername.from(PersonalInfo.class);
-		
-		Expression<String> custname = cb.concat(cb.concat(pRoot.get("firstName"), " "), pRoot.get("lastName"));
-		customername.select(custname)
-		.where(cb.equal(iRoot.get("custId"), pRoot.get("customerId")));
-		
-		cq.multiselect(iRoot.get("quoteNo").alias("quoteNo"),
-				paymentmode.alias("paymentmode"),
-				customername.alias("customername"),
-				iRoot.get("overallpremium").alias("overallpremium"),
-				iRoot.get("premiumamount").alias("premiumamount"),
-				iRoot.get("premiumdate").alias("premiumdate"),
-				iRoot.get("noofmonths").alias("noofmonths"),
-				iRoot.get("noofemi").alias("noofemi"),
-				iRoot.get("applicationNo").alias("applicationNo"),
-				iRoot.get("noofterms").alias("noofterms"),
-				iRoot.get("remarks").alias("remarks"),
-				iRoot.get("installmentNo").alias("installmentNo"),
-				iRoot.get("status").alias("status"),
-				iRoot.get("balanceamount").alias("balanceamount"),
-				iRoot.get("description").alias("description"),
-				iRoot.get("productId").alias("productId"),
-				hRoot.get("policyNo").alias("policyNo"),
-				cb.selectCase().when(cb.equal(iRoot.get("paymentstatus"), "Y"), "Success")
-				.otherwise("Pending").alias("paymentstatus"))
-		
-		.where(cb.equal(iRoot.get("quoteNo"), hRoot.get("quoteNo")),
-				cb.equal(iRoot.get("productId"), req.getProductId()),
-				cb.between(cb.function("trunc", Date.class, iRoot.get("premiumdate")), sdf.parse(req.getStartDate()), sdf.parse(req.getEndDate())),
-				cb.equal(iRoot.get("status"), "Y"),
-				cb.equal(hRoot.get("status"), "P"));
-		
-		return em.createQuery(cq).getResultList();
 	}
 	
 	public List<Tuple> getReferalSearchQuote(ReferalSearchQuoteReq req){
@@ -522,7 +324,7 @@ public class CriteriaQueryImpl {
 			predicates.toArray(predicate_array);
 			
 			query.multiselect(cb.function("trunc", Date.class, hpm.get("entryDate")).alias("entryDate")
-					,cb.count(hpm.get("entryDate")).alias("count"),cb.sum(hpm.get("overallPremium")).alias("overallPremium"))
+					,cb.count(hpm.get("entryDate")).alias("count"))
 					.where(predicate_array)
 					.groupBy(cb.function("trunc", Date.class, hpm.get("entryDate")))
 					.orderBy(cb.desc(cb.function("trunc", Date.class, hpm.get("entryDate"))));
@@ -838,27 +640,606 @@ public class CriteriaQueryImpl {
 		return null;
 	}
 	
-	public void updateVehiclePremimByVehicleId() {
+	@Transactional
+	public Integer updateVehiclePremimByVehicleId(String applicationNo, String vehicleId,
+			String currencyType, ModifyRateDetReq req) {
 		List<Predicate> predicates =new ArrayList<Predicate>();
 		try {
 			CriteriaBuilder cb =em.getCriteriaBuilder();
 			CriteriaUpdate<MotorPolicyCoverData> update =cb.createCriteriaUpdate(MotorPolicyCoverData.class);
 			Root<MotorPolicyCoverData> mpcd =update.from(MotorPolicyCoverData.class);
 			
-			update.set(mpcd.get("sumInsured"), "");
-			update.set(mpcd.get("rate"), "");
+			Double rate =StringUtils.isBlank(req.getRate())?0D:"103".equals(req.getPolicyTypeCoverId())?
+					Double.valueOf(req.getPolicyTypeCoverId())/100:Double.valueOf(req.getRate());			
+			
+			if("ZMW".equals(currencyType)) {
+				update.set(mpcd.get("sumInsured"), new BigDecimal(req.getSumInsured()));
+				update.set(mpcd.get("rate"), new BigDecimal(rate));
+			}else if("USD".equals(currencyType)) {
+				update.set(mpcd.get("usdSumInsured"), new BigDecimal(req.getSumInsured()));
+				update.set(mpcd.get("usdRate"), new BigDecimal(rate));
+			}
+			
 			update.set(mpcd.get("status"), "R");
+			Subquery<BigDecimal> amend_id =update.subquery(BigDecimal.class);
+			Root<MotorPolicyCoverData> mpcd2 =amend_id.from(MotorPolicyCoverData.class);
+			amend_id.select(cb.max(mpcd2.get("amendId"))).where(cb.equal(mpcd.get("applicationNo"), mpcd2.get("applicationNo")),
+					cb.equal(mpcd.get("policytypeCoverid"), mpcd2.get("policytypeCoverid")),cb.equal(mpcd.get("vehicleId"), mpcd2.get("vehicleId")),
+					cb.equal(mpcd.get("branchCode"), mpcd2.get("branchCode")),cb.equal(mpcd.get("groupId"), mpcd2.get("groupId")));
+					
+			predicates.add(cb.equal(mpcd.get("applicationNo"), applicationNo));
+			predicates.add(cb.equal(mpcd.get("policytypeCoverid"), req.getPolicyTypeCoverId()));
+			predicates.add(cb.equal(mpcd.get("vehicleId"), vehicleId));
+			predicates.add(cb.equal(mpcd.get("amendId"),amend_id));
 			
-			predicates.add(cb.equal(mpcd.get("applicationNo"), ""));
-			predicates.add(cb.equal(mpcd.get("policytypeCoverid"), ""));
-			predicates.add(cb.equal(mpcd.get("vehicleId"), ""));
+			Predicate predicate_array [] =new Predicate[predicates.size()];
+			predicates.toArray(predicate_array);
 			
+			update.where(predicate_array);
 			
+			return em.createQuery(update).executeUpdate();
 			
 		}catch (Exception e) {
 			log.error(e);
 			e.printStackTrace();
 		}
+		return 0;
+	}
+	
+	public List<Tuple> getMotorPolicyCoverData(String applicationNo,String vehicleId){
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createQuery(Tuple.class);
+			Root<MotorPolicyCoverData> mpd =query.from(MotorPolicyCoverData.class);
+			
+			Expression<Object> sumInsured =cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")),"USD"), mpd.get("usdSumInsured"))
+														.otherwise(mpd.get("sumInsured"));		
+			
+			Expression<Object> rate=cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")), "USD"),
+					cb.selectCase().when(cb.equal(mpd.get("groupId"),"103"), cb.prod(mpd.get("usdRate"), 100))
+				    .otherwise(mpd.get("usdRate"))).otherwise(cb.selectCase().when(cb.equal(mpd.get("groupId"), "103"), 
+					cb.prod(mpd.get("rate"), 100)).otherwise(mpd.get("rate")));
+			
+			Expression<Object> premium =cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")),"USD" ), mpd.get("usdPremium"))
+					                                   .otherwise(mpd.get("premium")); 
+			
+			Subquery<String> calc_type =query.subquery(String.class);
+			Root<MotorGroupMaster> mgm =calc_type.from(MotorGroupMaster.class);
+			Subquery<BigDecimal> amendId =calc_type.subquery(BigDecimal.class);
+			Root<MotorGroupMaster> mgm2 =amendId.from(MotorGroupMaster.class);
+			
+			amendId.select(cb.max(mgm2.get("amendId"))).where(cb.equal(mgm2.get("groupId"),mgm.get("groupId")));
+			calc_type.select(mgm.get("calcType")).where(cb.equal(mgm.get("groupId"),mpd.get("groupId")),
+					cb.equal(mgm.get("amendId"), amendId));
+					
+			query.multiselect(sumInsured.alias("sumInsured"),rate.alias("rate"),premium.alias("premium"),
+					calc_type.alias("calc_type"),mpd.get("vehicleId").alias("vehicleId"),mpd.get("groupId").alias("groupId"),
+					mpd.get("policytypeCoverid").alias("policytypeCoverid"),mpd.get("groupDesc").alias("groupDesc"),
+					mpd.get("opcoverDesc").alias("opcoverDesc"))
+			
+			.where(cb.equal(mpd.get("applicationNo"), applicationNo),cb.equal(mpd.get("vehicleId"), vehicleId),
+					mpd.get("policytypeCoverid").in(Arrays.asList("0","101","102")))
+			.orderBy(cb.asc(mpd.get("displayOrder")));
+					
+			return em.createQuery(query).getResultList();				
+			
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	@Transactional
+	public Integer updateMotorDataDetailByAppNoAndVehId(String applicationNo,String vehicleId,String currencyType, 
+			Double suminsured, Double electrical_pre, Double nonelectrical_pre) {
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaUpdate<MotorDataDetail> update =cb.createCriteriaUpdate(MotorDataDetail.class);
+			Root<MotorDataDetail> mdd =update.from(MotorDataDetail.class);
+			
+			if("ZMW".equals(currencyType)) {
+				update.set(mdd.get("suminsuredValueLocal"), new BigDecimal(suminsured));
+			}else if("USD".equals(currencyType)) {
+				update.set(mdd.get("suminsuredValueForeign"),new BigDecimal(suminsured));
+			}
+			
+			update.set(mdd.get("electricalSi"), new BigDecimal(electrical_pre));
+			update.set(mdd.get("nonelectricalSi"), new BigDecimal(nonelectrical_pre));
+			update.where(cb.equal(mdd.get("applicationNo"), applicationNo)
+					,cb.equal(mdd.get("vehicleId"), vehicleId));
+			
+			return em.createQuery(update).executeUpdate();
+					
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}	
+		return null;
 	}
 
+	public void callProcedure(String applicationNo, String vehicleId, String branchCode, BigDecimal bigDecimal) {
+		try {
+			StoredProcedureQuery procedure =em.createStoredProcedureQuery("MOTOR_PREMIUM_CALC_B2BV2")
+					.registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
+					.registerStoredProcedureParameter(2, Long.class, ParameterMode.IN)
+					.registerStoredProcedureParameter(3, String.class, ParameterMode.IN)
+					.registerStoredProcedureParameter(4, Long.class, ParameterMode.IN) 
+					.registerStoredProcedureParameter(5, String.class, ParameterMode.IN)
+					.registerStoredProcedureParameter(6, Long.class, ParameterMode.IN)
+					.setParameter(1, "B")
+					.setParameter(2, Long.valueOf(applicationNo))
+					.setParameter(3, branchCode)
+					.setParameter(4,bigDecimal.longValue())
+					.setParameter(5, "Referal")
+					.setParameter(6, Long.valueOf(vehicleId));					
+			procedure.execute();
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public List<Tuple> editModifyRate(String applicationNo,String vehicleId){
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createQuery(Tuple.class);
+			Root<MotorPolicyCoverData> mpd =query.from(MotorPolicyCoverData.class);
+			
+			Expression<Object> sumInsured =cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")),"USD"), mpd.get("usdSumInsured"))
+														.otherwise(mpd.get("sumInsured"));		
+			
+			Expression<Object> rate=cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")), "USD"),
+					cb.selectCase().when(cb.equal(mpd.get("groupId"),"103"), cb.prod(mpd.get("usdRate"), 100))
+				    .otherwise(mpd.get("usdRate"))).otherwise(cb.selectCase().when(cb.equal(mpd.get("groupId"), "103"), 
+					cb.prod(mpd.get("rate"), 100)).otherwise(mpd.get("rate")));
+			
+			Expression<Object> premium =cb.selectCase().when(cb.equal(cb.upper(mpd.get("currencyId")),"USD" ), mpd.get("usdPremium"))
+					                                   .otherwise(mpd.get("premium")); 
+			
+			Subquery<String> calc_type =query.subquery(String.class);
+			Root<MotorGroupMaster> mgm =calc_type.from(MotorGroupMaster.class);
+			Subquery<BigDecimal> amendId =calc_type.subquery(BigDecimal.class);
+			Root<MotorGroupMaster> mgm2 =amendId.from(MotorGroupMaster.class);
+			
+			amendId.select(cb.max(mgm2.get("amendId"))).where(cb.equal(mgm2.get("groupId"),mgm.get("groupId")));
+			calc_type.select(mgm.get("calcType")).where(cb.equal(mgm.get("groupId"),mpd.get("groupId")),
+					cb.equal(mgm.get("amendId"), amendId));
+					
+			query.multiselect(sumInsured.alias("sumInsured"),rate.alias("rate"),premium.alias("premium"),
+					calc_type.alias("calc_type"),mpd.get("vehicleId").alias("vehicleId"),mpd.get("groupId").alias("groupId"),
+					mpd.get("policytypeCoverid").alias("policytypeCoverid"),mpd.get("groupDesc").alias("groupDesc"),
+					mpd.get("opcoverDesc").alias("opcoverDesc"))
+			
+			.where(cb.equal(mpd.get("applicationNo"), applicationNo),cb.equal(mpd.get("vehicleId"), vehicleId))
+			.orderBy(cb.asc(mpd.get("displayOrder")));
+					
+			return em.createQuery(query).getResultList();				
+			
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	public List<Tuple> getUserListByBranchCode(String branchCode){
+		List<Predicate> predicates =new ArrayList<Predicate>();
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			
+			
+			Expression<Object> status =cb.selectCase().when(cb.equal(cb.upper(pi.get("status")), "Y"), "Active")
+					.when(cb.equal(cb.upper(pi.get("status")), "N"), "DeActive").when(cb.equal(cb.upper(pi.get("status")), "D"), "Delete")
+					.when(cb.equal(cb.upper(pi.get("status")), "L"), "Locked");
+			
+			Expression<String> customerName =cb.concat(cb.concat(pi.get("firstName"), " "),pi.get("lastName"));
+			
+			Subquery<String> userName =query.subquery(String.class);
+			Root<LoginMaster> lm2 =userName.from(LoginMaster.class);
+			userName.select(lm2.get("username")).distinct(true).where(cb.equal(lm2.get("loginId"), lm.get("oaCode")));
+			
+			Subquery<String> companyName =query.subquery(String.class);
+			Root<BrokerCompanyMaster> bcm =companyName.from(BrokerCompanyMaster.class);
+			companyName.select(bcm.get("companyName")).distinct(true).where(cb.equal(bcm.get("agencyCode"), lm.get("oaCode")));
+			
+			predicates.add(cb.equal(cb.upper(lm.get("usertype")), "USER"));
+			predicates.add(cb.equal(pi.get("agencyCode"), lm.get("agencyCode")));
+			predicates.add(cb.not(lm.get("loginId").in("NONE")));
+			predicates.add(cb.equal(pi.get("applicationId"), "2"));
+			predicates.add(cb.equal(lm.get("branchCode"), branchCode));
+			
+			Predicate predicate_array []=new Predicate[predicates.size()];
+			predicates.toArray(predicate_array);
+			
+			query.multiselect(cb.coalesce(customerName, pi.get("companyName")).alias("customerName"),
+					lm.get("usertype").alias("usertype"),lm.get("loginId").alias("loginId"),pi.get("applicationId").alias("applicationId"),
+					pi.get("agencyCode").alias("agencyCode"),status.alias("status"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
+					userName.alias("username"),companyName.alias("brokerName"))
+			.where(predicate_array);
+				 
+			return em.createQuery(query).getResultList();
+			
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public Tuple editUserDetailsByAgencyCode(String agencyCode) {
+		try {
+			CriteriaBuilder cb=em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			
+			
+			Subquery<String> userName =query.subquery(String.class);
+			Root<LoginMaster> lm2 =userName.from(LoginMaster.class);
+			userName.select(lm2.get("username")).distinct(true).where(cb.equal(lm2.get("agencyCode"), lm.get("oaCode")));
+			
+			Subquery<String> brokerCompanyName =query.subquery(String.class);
+			Root<BrokerCompanyMaster> bcm =brokerCompanyName.from(BrokerCompanyMaster.class);
+			brokerCompanyName.select(bcm.get("companyName")).distinct(true).where(cb.equal(bcm.get("agencyCode"), lm.get("oaCode")));
+			
+			Subquery<String> countryName =query.subquery(String.class);
+			Root<CountryMaster> cm =countryName.from(CountryMaster.class);
+			Subquery<Long> amend_id =countryName.subquery(Long.class);
+			Root<CountryMaster> cm2 =amend_id.from(CountryMaster.class);
+			amend_id.select(cb.max(cm2.get("amendId"))).where(cb.equal(cm2.get("countryId"), cm.get("countryId")));
+			countryName.select(cm.get("countryName")).distinct(true).where(cb.equal(cm.get("countryId"), pi.get("country"))
+					,cb.equal(cm.get("amendId"), amend_id));
+				
+			
+			Subquery<String> nation_name =query.subquery(String.class);
+			Root<CountryMaster> cm3 =nation_name.from(CountryMaster.class);
+				nation_name.select(cm3.get("nationalityName")).distinct(true)
+					.where(cb.equal(cm3.get("countryId"), pi.get("country")));
+			
+			query.multiselect(pi.get("title").alias("title"),pi.get("gender").alias("gender"),pi.get("firstName").alias("firstName"),
+					pi.get("lastName").alias("lastName"),pi.get("nationality").alias("nationality"),cb.function("to_char", Date.class, pi.get("dob"),cb.literal("DD/MM/YYY")).alias("dob"),
+					pi.get("telephone").alias("telephone"),pi.get("mobile").alias("mobile"),pi.get("fax").alias("fax"),pi.get("email").alias("email"),
+					pi.get("address1").alias("address1"),pi.get("address2").alias("address2"),pi.get("occupation").alias("occupation"),pi.get("emirate").alias("emirate"),
+					pi.get("country").alias("countryId"),pi.get("pobox").alias("pobox"),lm.get("agencyCode").alias("agencyCode"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYYY")).alias("entryDate"),
+					pi.get("status").alias("status"),pi.get("city").alias("city"),lm.get("branchCode").alias("branchCode"),lm.get("loginId").alias("loginId"),lm.get("usertype").alias("usertype"),
+					pi.get("custName").alias("custName"),pi.get("custArNo").alias("custArNo"),pi.get("customerId").alias("customerId"),lm.get("oaCode").alias("oaCode"),
+					lm.get("attachedBranch").alias("attachedBranch"),lm.get("subBranch").alias("subBranch"),lm.get("isB2c").alias("isB2c"),
+					userName.alias("userName"),countryName.alias("countryName"))
+			
+			.where(cb.equal(pi.get("agencyCode"), agencyCode),cb.equal(pi.get("agencyCode"), lm.get("agencyCode")),
+					cb.equal(pi.get("loginId"), lm.get("loginId")));
+					
+			return em.createQuery(query).getSingleResult();				
+					
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	public List<Tuple> getCustomerDetailsByAgencyCode(String agencyCode,String appId){
+		try {
+			CriteriaBuilder cb=em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
+			
+			Subquery<String> broker_name =query.subquery(String.class);
+			Root<BrokerCompanyMaster> bcm =broker_name.from(BrokerCompanyMaster.class);
+			broker_name.select(bcm.get("companyName")).distinct(true).where(cb.equal(bcm.get("agencyCode"), pi.get("agencyCode")));
+			
+			Subquery<String> loginId =query.subquery(String.class);
+			Root<LoginMaster> lm =loginId.from(LoginMaster.class);
+			loginId.select(lm.get("loginId")).where(cb.equal(lm.get("agencyCode"),agencyCode));
+			
+			query.multiselect(cb.coalesce(pi.get("firstName"), pi.get("companyName")).alias("customerName"),
+					cb.coalesce(pi.get("agencyCode"), "0").alias("agencyCode"),cb.coalesce(pi.get("fdCode"), "0").alias("email"),
+					pi.get("pobox").alias("pobox"),pi.get("mobile").alias("mobile"),pi.get("emirate").alias("cityName"),
+					pi.get("customerId").alias("customerId"),pi.get("missippiCustomerCode").alias("missippiCustomerCode"),
+					pi.get("title").alias("title"),pi.get("address1").alias("address1"),pi.get("address2").alias("address2"),
+					pi.get("custArNo").alias("custArNo"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYYY")),
+					pi.get("customerLoginId").alias("customerLoginId"),broker_name.alias("brokerName"))
+				
+			.where(cb.equal(pi.get("applicationId"), appId),pi.get("loginId").in(loginId))
+			.orderBy(cb.asc(pi.get("firstName")));
+					
+			return em.createQuery(query).getResultList();
+			
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public List<Tuple> getAdminDeatilsByBranchCode(String branchCode){
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			
+			Expression<Object> status =cb.selectCase().when(cb.equal(lm.get("status"), "Y"), "Active")
+					.when(cb.equal(lm.get("status"), "N"), "DeActive").when(cb.equal(lm.get("status"), "D"), "Delete")
+					.when(cb.equal(lm.get("status"), "L"), "Locked");
+			
+			Subquery<String>branc_name =query.subquery(String.class);
+			Root<BranchMaster> bm =branc_name.from(BranchMaster.class);
+			branc_name.select(bm.get("branchName")).distinct(true).where(cb.equal(bm.get("branchCode"), lm.get("branchCode")));
+			
+			query.multiselect(lm.get("loginId").alias("loginId"),lm.get("username").alias("userName"),
+					lm.get("usertype").alias("usertype"),status.alias("status"),branc_name.alias("branch_name"))
+					
+			.where(lm.get("userid").in(Arrays.asList("2","4")),cb.equal(lm.get("branchCode"), branchCode));	
+				
+			return em.createQuery(query).getResultList();
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public Tuple editAdminDetailsByLoginId(String loginId, String branchCode) {
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			
+			Expression<Object> status =cb.selectCase().when(cb.equal(lm.get("status"), "Y"), "Active")
+					.when(cb.equal(lm.get("status"), "N"), "DeActive").when(cb.equal(lm.get("status"), "D"), "Delete")
+					.when(cb.equal(lm.get("status"), "L"), "Locked");
+			
+			Subquery<String>branc_name =query.subquery(String.class);
+			Root<BranchMaster> bm =branc_name.from(BranchMaster.class);
+			branc_name.select(bm.get("branchName")).distinct(true).where(cb.equal(bm.get("branchCode"), lm.get("branchCode")));
+			
+			query.multiselect(lm.get("loginId").alias("loginId"),lm.get("userName").alias("userName"),lm.get("onlineYn").alias("onlineYn"),
+					lm.get("usertype").alias("usertype"),status.alias("status"),branc_name.alias("branch_name"),lm.get("mobileNo").alias("mobileNo"),
+					lm.get("branchCode").alias("branchCode"),cb.trim(Trimspec.BOTH,lm.get("productId")).alias("productId"),lm.get("menuId").alias("menuId"),
+					lm.get("brokerCodes").alias("brokerCodes"),lm.get("userMail").alias("userMail"),lm.get("attachedUw").alias("attachedUw"),
+					lm.get("attachedBranch").alias("attachedBranch"),lm.get("firstName").alias("firstName"),lm.get("lastName").alias("lastName"),
+					lm.get("middleName").alias("middleName"))
+					
+					
+			.where(lm.get("userid").in(Arrays.asList("2","4")),cb.equal(lm.get("branchCode"), branchCode),cb.equal(lm.get("loginId"), loginId));
+					
+					
+			return em.createQuery(query).getSingleResult();	
+				
+		
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	
+	public Long getClaimIdSum() {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+		Root<MotorClaimIntimationDtl> cRoot = cq.from(MotorClaimIntimationDtl.class);
+		
+		cq.multiselect(cb.coalesce(cb.max(cb.sum(cRoot.get("claimid"), 1L)), 1L).alias("claimid"));
+		
+		return em.createQuery(cq).getSingleResult().longValue();
+		
+	}
+
+	public Long getClaimRefSeq() {
+		Query q = em.createNativeQuery("select MOTOR_CLAIM_INTIMATION_SEQ.nextval from dual");		
+		Long nextVal = ((BigDecimal)q.getSingleResult()).longValue();
+		return nextVal;
+	}
+
+	public List<Tuple> ForeignExchangeList() {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ExchangeMaster> eRoot = cq.from(ExchangeMaster.class);
+		
+		Subquery<String> currencyname = cq.subquery(String.class);
+		Root<CurrencyMaster> cRoot = currencyname.from(CurrencyMaster.class);
+		
+		currencyname.select(cRoot.get("currencyname"))
+		.where(cb.equal(cRoot.get("currencyid"), eRoot.get("currencyId")));
+		
+		Expression<String> selectstatus = eRoot.get("status");
+		Expression<Object> casestatus = cb.selectCase(selectstatus)
+				.when("Y", "Active")
+				.when("N", "DeActive")
+				.otherwise(selectstatus);
+		
+		Subquery<String> countryname = cq.subquery(String.class);
+		Root<CountryMaster> cmRoot =countryname.from(CountryMaster.class);
+		
+		countryname.select(cmRoot.get("countryname"))
+		.where(cb.equal(cmRoot.get("countryid"), eRoot.get("countryId")));
+		
+		Subquery<Integer> amdSub = cq.subquery(Integer.class);
+		Root<ExchangeMaster> amRoot = amdSub.from(ExchangeMaster.class);
+		
+		amdSub.select(cb.max(amRoot.get("amendid")))
+		.where(cb.equal(amRoot.get("exchId"), eRoot.get("exchId")));
+		
+		cq.multiselect(eRoot.get("exchId").alias("exchId"),
+				eRoot.get("exchRate").alias("exchRate"),
+				eRoot.get("currencyId").alias("currencyId"),
+				currencyname.alias("currencyname"),
+				eRoot.get("amendid").alias("amendid"),
+				eRoot.get("incepDate").alias("incepDate"),
+				eRoot.get("expirydate").alias("expirydate"),
+				eRoot.get("effectivedate").alias("effectivedate"),
+				eRoot.get("entrydate").alias("entrydate"),
+				eRoot.get("remarks").alias("remarks"),
+				casestatus.alias("status"),
+				eRoot.get("rsacode").alias("rsacode"),
+				eRoot.get("sno").alias("sno"),
+				eRoot.get("countryId").alias("countryId"),
+				countryname.alias("countryname"),
+				eRoot.get("displayorder").alias("displayorder"))
+		
+		.where(cb.equal(eRoot.get("amendid"), amdSub))
+		.orderBy(cb.asc(eRoot.get("sno")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> EditForeignExchange(String exchangeId) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ExchangeMaster> eRoot = cq.from(ExchangeMaster.class);
+		
+		Subquery<String> currencyname = cq.subquery(String.class);
+		Root<CurrencyMaster> cRoot = currencyname.from(CurrencyMaster.class);
+		
+		currencyname.select(cRoot.get("currencyname"))
+		.where(cb.equal(cRoot.get("currencyid"), eRoot.get("currencyId")));
+		
+		Subquery<String> countryname = cq.subquery(String.class);
+		Root<CountryMaster> cmRoot = countryname.from(CountryMaster.class);
+		
+		countryname.select(cmRoot.get("countryname"))
+		.where(cb.equal(cmRoot.get("countryid"), eRoot.get("countryId")));
+		
+		Subquery<Integer> amdSub = cq.subquery(Integer.class);
+		Root<ExchangeMaster> amdRoot = amdSub.from(ExchangeMaster.class);
+		
+		amdSub.select(cb.max(amdRoot.get("amendid")))
+		.where(cb.equal(amdRoot.get("exchId"), eRoot.get("exchId")));
+		
+		cq.multiselect(eRoot.get("exchId").alias("exchId"),
+				eRoot.get("exchRate").alias("exchRate"),
+				eRoot.get("currencyId").alias("currencyId"),
+				currencyname.alias("currencyname"),
+				eRoot.get("amendid").alias("amendid"),
+				eRoot.get("incepDate").alias("incepDate"),
+				eRoot.get("expirydate").alias("expirydate"),
+				eRoot.get("effectivedate").alias("effectivedate"),
+				eRoot.get("entrydate").alias("entrydate"),
+				eRoot.get("remarks").alias("remarks"),
+				eRoot.get("status").alias("status"),
+				eRoot.get("rsacode").alias("rsacode"),
+				eRoot.get("sno").alias("sno"),
+				eRoot.get("countryId").alias("countryId"),
+				countryname.alias("countryname"),
+				eRoot.get("displayorder").alias("displayorder"))
+		
+		.where(cb.equal(eRoot.get("amendid"), amdSub),
+				cb.equal(eRoot.get("exchId"), exchangeId));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> getRoadAssistantList(RoadAssistantListReq req) throws ParseException {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<RoadSideAssistantDetails> rRoot = cq.from(RoadSideAssistantDetails.class);
+		
+		Expression<Object> selectdevice = cb.selectCase().when(cb.equal(rRoot.get("deviceId"), "HYBRID"), "Mobile").otherwise("Webapp");
+		
+		Expression<Object> selectstatus = cb.selectCase().when(cb.equal(rRoot.get("status"), "P"), "PROCESSED")
+				.when(cb.equal(rRoot.get("status"), "C"), "CLOSED").otherwise("OPEN");
+		
+		cq.multiselect(rRoot.get("refNo").alias("refNo"),
+				rRoot.get("mobileno").alias("mobileno"),
+				rRoot.get("policyNo").alias("policyNo"),
+				rRoot.get("customerName").alias("customerName"),
+				rRoot.get("assistantType").alias("assistantType"),
+				rRoot.get("descripition").alias("descripition"),
+				rRoot.get("logitude").alias("logitude"),
+				rRoot.get("latitude").alias("latitude"),
+				selectdevice.alias("deviceId"),
+				rRoot.get("entrydate").alias("entrydate"),
+				rRoot.get("location").alias("location"),
+				selectstatus.alias("status"),
+				rRoot.get("remarks").alias("remarks"),
+				rRoot.get("mailId").alias("mailId"),
+				rRoot.get("updatedate").alias("updatedate"),
+				rRoot.get("customerfeedback").alias("customerfeedback"))
+		
+		.where(cb.between(cb.function("trunc", Date.class, rRoot.get("entrydate")), sdf.parse(req.getFromDate()), sdf.parse(req.getToDate())))
+		.orderBy(cb.asc(rRoot.get("refNo")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> GetEmiReportCount(GetEmiReportReq req) throws ParseException {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<InstallmentDetails> iRoot = cq.from(InstallmentDetails.class);
+		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
+		
+		cq.multiselect(cb.sum(iRoot.get("premiumamount")).alias("premiumamount"),
+				cb.count(iRoot).alias("emiduecount"))
+		.where(cb.equal(hRoot.get("quoteNo"), iRoot.get("quoteNo")),
+				cb.equal(hRoot.get("status"), "P"),
+				cb.equal(iRoot.get("status"), "Y"),
+				cb.between(cb.function("trunc", Date.class, iRoot.get("premiumdate")), sdf.parse(req.getStartDate()), sdf.parse(req.getEndDate())),
+				cb.equal(iRoot.get("productId"), req.getProductId()));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> GetEmiReportList(GetEmiReportReq req) throws ParseException {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq= cb.createQuery(Tuple.class);
+		Root<InstallmentDetails> iRoot = cq.from(InstallmentDetails.class);
+		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
+		
+		Subquery<String> paymentmode = cq.subquery(String.class);
+		Root<ListItemValue> pmRoot = paymentmode.from(ListItemValue.class);
+		
+		paymentmode.select(pmRoot.get("itemValue"))
+		.where(cb.equal(hRoot.get("paymentMode"), pmRoot.get("itemCode")),
+				cb.equal(pmRoot.get("itemType"), "PAYMENTTYPE"));
+		
+		Subquery<String> customername = cq.subquery(String.class);
+		Root<PersonalInfo> pRoot = customername.from(PersonalInfo.class);
+		
+		Expression<String> custname = cb.concat(cb.concat(pRoot.get("firstName"), " "), pRoot.get("lastName"));
+		customername.select(custname)
+		.where(cb.equal(iRoot.get("custId"), pRoot.get("customerId")));
+		
+		cq.multiselect(iRoot.get("quoteNo").alias("quoteNo"),
+				paymentmode.alias("paymentmode"),
+				customername.alias("customername"),
+				iRoot.get("overallpremium").alias("overallpremium"),
+				iRoot.get("premiumamount").alias("premiumamount"),
+				iRoot.get("premiumdate").alias("premiumdate"),
+				iRoot.get("noofmonths").alias("noofmonths"),
+				iRoot.get("noofemi").alias("noofemi"),
+				iRoot.get("applicationNo").alias("applicationNo"),
+				iRoot.get("noofterms").alias("noofterms"),
+				iRoot.get("remarks").alias("remarks"),
+				iRoot.get("installmentNo").alias("installmentNo"),
+				iRoot.get("status").alias("status"),
+				iRoot.get("balanceamount").alias("balanceamount"),
+				iRoot.get("description").alias("description"),
+				iRoot.get("productId").alias("productId"),
+				hRoot.get("policyNo").alias("policyNo"),
+				cb.selectCase().when(cb.equal(iRoot.get("paymentstatus"), "Y"), "Success")
+				.otherwise("Pending").alias("paymentstatus"))
+		
+		.where(cb.equal(iRoot.get("quoteNo"), hRoot.get("quoteNo")),
+				cb.equal(iRoot.get("productId"), req.getProductId()),
+				cb.between(cb.function("trunc", Date.class, iRoot.get("premiumdate")), sdf.parse(req.getStartDate()), sdf.parse(req.getEndDate())),
+				cb.equal(iRoot.get("status"), "Y"),
+				cb.equal(hRoot.get("status"), "P"));
+		
+		return em.createQuery(cq).getResultList();
+	}
+	
+	
+	
+	
+	
 }

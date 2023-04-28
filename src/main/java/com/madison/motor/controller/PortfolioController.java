@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
@@ -58,6 +59,17 @@ public class PortfolioController {
 	@PostMapping("/update/quote/premium")
 	public MadisonCommonRes updateQuotePremium(@RequestBody UpdateQuotePremiumReq req) {
 		return service.updateQuotePremium(req);
+	}
+	
+	@PostMapping("/modify/rate")
+	public MadisonCommonRes modifyRate(@RequestBody ModifyRateReq req) {
+		return service.modifyRate(req);
+	}
+	
+	@GetMapping("/edit/modify/rate")
+	public MadisonCommonRes editModifyRate(@RequestParam ("applicationNo") String applicationNo,
+			@RequestParam ("vehicleId") String vehicleId) {
+		return service.editModifyRate(applicationNo,vehicleId);
 	}
 	
 }

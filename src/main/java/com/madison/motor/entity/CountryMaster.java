@@ -1,6 +1,6 @@
 package com.madison.motor.entity;
 
-import java.io.Serializable;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -10,63 +10,46 @@ import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "COUNTRY_MASTER")
 @IdClass(CountryMasterId.class)
-public class CountryMaster implements Serializable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	
-	//ENTER INTO PIMARY KEY
-	@Id
-	@Column(name = "COUNTRY_ID", nullable= false, length=15)
-	private Long countryid;
+public class CountryMaster {
 	
 	@Id
-	@Column(name = "AMEND_ID", nullable=false, length=10)
-	private Long amendid;
+	@Column(name = "COUNTRY_ID")
+	private Long countryId; 
 	
-	// ENTER INTO COLUMN'S
+	@Id
+	@Column(name ="AMEND_ID")
+	private Long amendId;
 	
-	@Column(name = "SNO__")
+	@Column(name ="SNO__")
 	private Long sno;
+	@Column(name ="COUNTRY_NAME")
+	private String countryName;
+	@Column(name ="COUNTRY_SHORT_NAME")
+	private String  countryShortName;
+	@Column(name ="STATUS")
+	private String  status;
+	@Column(name ="RSACODE")
+	private String  rsaCode;
+	@Column(name ="NATIONALITY_NAME")
+	private String  nationalityName;
+	@Column(name ="EFFECTIVE_DATE")
+	private Date  effectiveDate;
+	@Column(name ="GEO_RATE")
+	private Long  geoRate;
+	@Column(name ="REMARKS")
+	private String  remarks;
+	@Column(name ="INT_PORT_CODE")
+	private String  intPortCode;
 	
-	@Column(name = "COUNTRY_NAME")
-	private String countryname;
-	
-	@Column(name = "COUNTRY_SHORT_NAME")
-	private String countryshortname;
-	
-	@Column(name = "STATUS")
-	private String status;
-	
-	@Column(name = "RSACODE")
-	private String rsacode;
-	
-	@Column(name = "NATIONALITY_NAME")
-	private String nationalityname;
-	
-	@Column(name = "EFFECTIVE_DATE")
-	private Date effectivedate;
-	
-	@Column(name = "GEO_RATE")
-	private Long georate;
-	
-	@Column(name = "REMARKS")
-	private String remarks;
-	
-	@Column(name = "INT_PORT_CODE")
-	private String intportcode;
+
 
 }
