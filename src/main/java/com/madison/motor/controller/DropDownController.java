@@ -28,5 +28,4 @@ public class DropDownController {
 		return service.getBranchByLoginId(loginId);
 	}
 	
-	
 }

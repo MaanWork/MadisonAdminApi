@@ -20,5 +20,7 @@ public class ReferalSearchQuoteRes {
 	private String entryDate;
 	@JsonProperty("TotalRecordsCount")
 	private String totalRecordsCount;
+	@JsonProperty("OverallPremium")
+	private String overallPremium;
 
 }

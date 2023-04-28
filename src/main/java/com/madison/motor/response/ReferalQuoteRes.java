@@ -25,6 +25,10 @@ public class ReferalQuoteRes {
 	private String remarks;
 	@JsonProperty("Status")
 	private String status;
+	@JsonProperty("ApplicationNo")
+	private String applicationNo;
+	@JsonProperty("CustomerId")
+	private String customerId;
 	
 
 }

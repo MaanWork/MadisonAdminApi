@@ -21,7 +21,6 @@ import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
-import javax.transaction.TransactionScoped;
 import javax.transaction.Transactional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -56,8 +55,8 @@ import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
 import com.madison.motor.request.RejectEditReq;
-import com.madison.motor.request.UpdateQuotePremiumReq;
 import com.madison.motor.request.RoadAssistantListReq;
+import com.madison.motor.request.UpdateQuotePremiumReq;
 
 @Component
 public class CriteriaQueryImpl {
@@ -523,7 +522,7 @@ public class CriteriaQueryImpl {
 			predicates.toArray(predicate_array);
 			
 			query.multiselect(cb.function("trunc", Date.class, hpm.get("entryDate")).alias("entryDate")
-					,cb.count(hpm.get("entryDate")).alias("count"))
+					,cb.count(hpm.get("entryDate")).alias("count"),cb.sum(hpm.get("overallPremium")).alias("overallPremium"))
 					.where(predicate_array)
 					.groupBy(cb.function("trunc", Date.class, hpm.get("entryDate")))
 					.orderBy(cb.desc(cb.function("trunc", Date.class, hpm.get("entryDate"))));
@@ -861,4 +860,5 @@ public class CriteriaQueryImpl {
 			e.printStackTrace();
 		}
 	}
+
 }

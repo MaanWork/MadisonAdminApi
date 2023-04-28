@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.Tuple;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +22,7 @@ import com.madison.motor.repository.ListItemValueRepository;
 import com.madison.motor.response.DropdownRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.service.DropDownService;
+import com.madison.motor.utilityImpl.CriteriaQueryImpl;
 
 @Service
 public class DropDownServiceImpl implements DropDownService{
@@ -28,6 +31,9 @@ public class DropDownServiceImpl implements DropDownService{
 	
 	@Autowired
 	private ListItemValueRepository listItemRepo;
+	
+	@Autowired
+	private CriteriaQueryImpl query;
 	
 	@Override
 	public MadisonCommonRes getPortFolioType() {

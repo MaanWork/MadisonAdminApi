@@ -105,7 +105,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 							.policyStartDate(p.get("inceptionDate")==null?"":p.get("inceptionDate").toString())
 							.policyType(p.get("policy_type")==null?"":p.get("policy_type").toString())
 							.premium(p.get("premium")==null?"":p.get("premium").toString())
-							.quoteCreatedBy(p.get("entryDate")==null?"":p.get("entryDate").toString())
+							.quoteCreatedBy(p.get("loginId")==null?"":p.get("loginId").toString())
 							.quoteNo(p.get("quoteNo")==null?"":p.get("quoteNo").toString())
 							.policyNo(p.get("policyNo")==null?"":p.get("policyNo").toString())
 							.paymentType(p.get("payment_type")==null?"":p.get("payment_type").toString())
@@ -139,6 +139,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 					ReferalSearchQuoteRes classQuoteRes =ReferalSearchQuoteRes.builder()
 							.entryDate(p.get("entryDate")==null?"":sdf.format(p.get("entryDate")))
 							.totalRecordsCount(p.get("count")==null?"":p.get("count").toString())
+							.overallPremium(p.get("overallPremium")==null?"":p.get("overallPremium").toString())
 							.build();
 					array_list.add(classQuoteRes);
 				});
@@ -167,6 +168,8 @@ public class PortfolioServiceImpl implements PortfolioService{
 				list.forEach(p ->{
 					ReferalQuoteRes referalQuoteRes = ReferalQuoteRes.builder()
 							.brokerName(p.get("companyName")==null?"":p.get("companyName").toString())
+							.applicationNo(p.get("applicationNo")==null?"":p.get("applicationNo").toString())
+							.customerId(p.get("customerId")==null?"":p.get("customerId").toString())
 							.customerName(p.get("customer_name")==null?"":p.get("customer_name").toString())
 							.quoteCreated(p.get("quote_created")==null?"":p.get("quote_created").toString())
 							.quoteNo(p.get("quoteNo")==null?"":p.get("quoteNo").toString())
