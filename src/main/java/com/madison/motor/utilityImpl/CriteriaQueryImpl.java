@@ -1001,7 +1001,7 @@ public class CriteriaQueryImpl {
 			Root<BranchMaster> bm =branc_name.from(BranchMaster.class);
 			branc_name.select(bm.get("branchName")).distinct(true).where(cb.equal(bm.get("branchCode"), lm.get("branchCode")));
 			
-			query.multiselect(lm.get("loginId").alias("loginId"),lm.get("userName").alias("userName"),lm.get("onlineYn").alias("onlineYn"),
+			query.multiselect(lm.get("loginId").alias("loginId"),lm.get("username").alias("userName"),lm.get("onlineYn").alias("onlineYn"),
 					lm.get("usertype").alias("usertype"),status.alias("status"),branc_name.alias("branch_name"),lm.get("mobileNo").alias("mobileNo"),
 					lm.get("branchCode").alias("branchCode"),cb.trim(Trimspec.BOTH,lm.get("productId")).alias("productId"),lm.get("menuId").alias("menuId"),
 					lm.get("brokerCodes").alias("brokerCodes"),lm.get("userMail").alias("userMail"),lm.get("attachedUw").alias("attachedUw"),

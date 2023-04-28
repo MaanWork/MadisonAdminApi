@@ -155,7 +155,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.attachedUw(admin.get("attachedUw")==null?"":admin.get("attachedUw").toString())
 						.branchCode(admin.get("branchCode")==null?"":admin.get("branchCode").toString())
 						.branchName(admin.get("branch_name")==null?"":admin.get("branch_name").toString())
-						.brokerCode(admin.get("brokerName")==null?"":admin.get("brokerName").toString())
+						.brokerCode(admin.get("brokerCodes")==null?"":admin.get("brokerCodes").toString())
 						.firstName(admin.get("firstName")==null?"":admin.get("firstName").toString())
 						.middleName(admin.get("middleName")==null?"":admin.get("middleName").toString())
 						.lastName(admin.get("lastName")==null?"":admin.get("lastName").toString())
