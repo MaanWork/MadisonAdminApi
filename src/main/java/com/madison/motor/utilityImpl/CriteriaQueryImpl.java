@@ -327,7 +327,7 @@ public class CriteriaQueryImpl {
 			predicates.toArray(predicate_array);
 			
 			query.multiselect(cb.function("trunc", Date.class, hpm.get("entryDate")).alias("entryDate")
-					,cb.count(hpm.get("entryDate")).alias("count"))
+					,cb.count(hpm.get("entryDate")).alias("count"),cb.sum(hpm.get("overallPremium")).alias("overallPremium"))
 					.where(predicate_array)
 					.groupBy(cb.function("trunc", Date.class, hpm.get("entryDate")))
 					.orderBy(cb.desc(cb.function("trunc", Date.class, hpm.get("entryDate"))));
@@ -534,7 +534,7 @@ public class CriteriaQueryImpl {
 			query.multiselect(hpm.get("quoteNo").alias("quoteNo"),cb.function("to_char", Date.class, hpm.get("entryDate"),
 					cb.literal("DD/MM/YYYY")).alias("quoteCreatedDate"),hpm.get("currency").alias("currency"),pi.get("email")
 					.alias("email"),pi.get("companyName").alias("companyName"),case_con.alias("product"),policy_type.alias("policy_type"),
-					hpm.get("productId").alias("productId"))
+					hpm.get("productId").alias("productId"),pi.get("firstName").alias("firstName"),pi.get("lastName").alias("lastName"))
 				
 			.where(cb.equal(hpm.get("applicationNo"), applicationNo),cb.equal(hpm.get("customerId"),pi.get("customerId"))
 						,cb.equal(hpm.get("applicationNo"), mpd.get("applicationno")),cb.equal(hpm.get("quoteNo"), mpd.get("quoteno")));

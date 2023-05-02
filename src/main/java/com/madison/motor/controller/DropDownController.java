@@ -44,9 +44,9 @@ public class DropDownController {
 		return service.getConditionList(req);
 	}
 	
-	@PostMapping("/edit/condition/list")
-	public MadisonCommonRes editConditionList(@RequestParam("quoteNo") String quoteNo) {
-		return service.editConditionList(quoteNo);
+	@GetMapping("/edit/condition/list")
+	public MadisonCommonRes editConditionList(@RequestParam("quoteNo") String quoteNo,@RequestParam("contype") String contype) {
+		return service.editConditionList(quoteNo,contype);
 	}
 	
 	@PostMapping("/insert/condition")

@@ -115,7 +115,7 @@ public class DropDownServiceImpl implements DropDownService{
 		MadisonCommonRes res = new MadisonCommonRes();
 		Set<DropdownRes> resList =new HashSet<DropdownRes>();
 		try {
-			List<Map<String,Object>> list=listItemRepo.getConditionList(req.getPolicyTypeId(), req.getQuoteNo());
+			List<Map<String,Object>> list=listItemRepo.getConditionList(req.getPolicyTypeId(),req.getType(), req.getQuoteNo());
 			if(list.size()>0) {
 					list.forEach(p ->{
 						DropdownRes r =DropdownRes.builder()
@@ -138,11 +138,11 @@ public class DropDownServiceImpl implements DropDownService{
 	}
 
 	@Override
-	public MadisonCommonRes editConditionList(String quoteNo) {
+	public MadisonCommonRes editConditionList(String quoteNo,String contype) {
 		MadisonCommonRes res = new MadisonCommonRes();
 		Set<DropdownRes> resList =new HashSet<DropdownRes>();
 		try {
-			List<Map<String,Object>> list=listItemRepo.editConditionList(quoteNo);
+			List<Map<String,Object>> list=listItemRepo.editConditionList(quoteNo,contype);
 			if(list.size()>0) {
 					list.forEach(p ->{
 						DropdownRes r =DropdownRes.builder()
@@ -170,7 +170,7 @@ public class DropDownServiceImpl implements DropDownService{
 		try {
 			for(InsertConditionReq r :req) {
 				listItemRepo.deleteConditionList(r.getQuoteNo(), r.getCoreAppCode());
-				listItemRepo.insertCondition(r.getQuoteNo(),"1","CONDITION","1",r.getQuoteNo(),r.getDescription(),"Y","",r.getCoreAppCode());
+				listItemRepo.insertCondition(r.getQuoteNo(),r.getType(),r.getContype(),r.getType(),r.getQuoteNo(),r.getDescription(),"Y","",r.getCoreAppCode());
 			}
 			res.setMessage("SUCCESS");
 			res.setResponse("Inserted successfully");

@@ -41,11 +41,11 @@ public interface ListItemValueRepository  extends JpaRepository<ListItemValue,Li
 	@Query(value="SELECT branch_code, branch_name FROM branch_master WHERE branch_code IN( SELECT DISTINCT( regexp_substr(lc_login, '[^,]+', 1, level)) lc_login FROM ( SELECT attached_branch lc_login FROM login_master WHERE login_id =?1) b CONNECT BY level <= length(lc_login) - length(replace(lc_login, ',', '')) + 1 AND lc_login IS NOT NULL ) AND status = 'Y'",nativeQuery=true)
 	List<Map<String,Object>>getBranchByLoginId(String loginId);
 	
-	@Query(value="SELECT sno code, condition_id, coreappcode, condition_desc code_desc FROM motor_condition_master WHERE policy_type_id =?1 AND condition_type = 'CONDITION' AND sno NOT IN( SELECT coreappcode FROM motor_clauses_info WHERE quote_no =?2 AND coreappcode IS NOT NULL) AND status = 'Y' ORDER BY sno",nativeQuery=true)
-	List<Map<String,Object>> getConditionList(String policyType,String quoteNo);
+	@Query(value="SELECT sno code, condition_id, coreappcode, condition_desc code_desc FROM motor_condition_master WHERE policy_type_id =?1 AND condition_type = ?2 AND sno NOT IN( SELECT coreappcode FROM motor_clauses_info WHERE quote_no =?3 AND coreappcode IS NOT NULL) AND status = 'Y' ORDER BY sno",nativeQuery=true)
+	List<Map<String,Object>> getConditionList(String policyType,String Type,String quoteNo);
 
-	@Query(value ="SELECT CODE,CODE_DESC,COREAPPCODE FROM MOTOR_CLAUSES_INFO WHERE QUOTE_NO=?1 AND CON_TYPE='1' ORDER BY CODE",nativeQuery=true)
-	List<Map<String, Object>> editConditionList(String quoteNo);
+	@Query(value ="SELECT CODE,CODE_DESC,COREAPPCODE FROM MOTOR_CLAUSES_INFO WHERE QUOTE_NO=?1 AND CON_TYPE=?2 ORDER BY CODE",nativeQuery=true)
+	List<Map<String, Object>> editConditionList(String quoteNo,String contype);
 	
 	@Modifying
 	@Transactional

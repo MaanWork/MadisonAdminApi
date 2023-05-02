@@ -16,7 +16,7 @@ public interface DropDownService {
 
 	MadisonCommonRes getConditionList(GetConditionReq req);
 
-	MadisonCommonRes editConditionList(String quoteNo);
+	MadisonCommonRes editConditionList(String quoteNo, String contype);
 
 	MadisonCommonRes insertCondition(List<InsertConditionReq> req);
 

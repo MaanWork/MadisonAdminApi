@@ -45,5 +45,9 @@ public class QuotePremiumInfoRes {
 	private String excessSign;
 	@JsonProperty("NetPremium")
 	private String netPremium;
+	@JsonProperty("FirstName")
+	private String firstName;
+	@JsonProperty("LastName")
+	private String lastName;
 
 }

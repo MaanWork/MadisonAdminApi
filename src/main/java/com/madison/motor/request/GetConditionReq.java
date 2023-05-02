@@ -11,5 +11,7 @@ public class GetConditionReq {
 	private String policyTypeId;
 	@JsonProperty("QuoteNo")
 	private String QuoteNo;
+	@JsonProperty("Type")
+	private String type;
 
 }

@@ -225,6 +225,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 						res.setModel(StringUtils.isBlank(mdd.getModelName())?"":mdd.getModelName());
 						res.setVehicleUsage(StringUtils.isBlank(mdd.getVehicleUsageName())?"":mdd.getVehicleUsageName());
 						res.setVehcileId(vehicleId.toString());
+						res.setTypeOfBody(StringUtils.isBlank(mdd.getBodyName())?"":mdd.getBodyName());
 						res.setApplicationNo(appNo);
 					});
 					res.setPremium(premium_list);
@@ -285,6 +286,8 @@ public class PortfolioServiceImpl implements PortfolioService{
 					.currency(quoteInfo.get("currency")==null?"":quoteInfo.get("currency").toString())
 					.email(quoteInfo.get("email")==null?"":quoteInfo.get("email").toString())
 					.customerName(quoteInfo.get("companyName")==null?"":quoteInfo.get("companyName").toString())
+					.firstName(quoteInfo.get("firstName")==null?"":quoteInfo.get("firstName").toString())
+					.lastName(quoteInfo.get("lastName")==null?"":quoteInfo.get("lastName").toString())
 					.policyType(quoteInfo.get("policy_type")==null?"":quoteInfo.get("policy_type").toString())
 					.productName(quoteInfo.get("product")==null?"":quoteInfo.get("product").toString())
 					.quoteCreatedDate(quoteInfo.get("quoteCreatedDate")==null?"":quoteInfo.get("quoteCreatedDate").toString())
@@ -416,6 +419,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 								.sumInsured(v.get("sumInsured")==null?"":v.get("sumInsured").toString())
 								.rate(v.get("rate")==null?"":v.get("rate").toString())
 								.premium(v.get("premium")==null?"":v.get("premium").toString())
+								.calcType(v.get("calc_type")==null?"":v.get("calc_type").toString())
 								.vehicleId(vehicleId.toString())
 								.policyTypeCoverId(v.get("policytypeCoverid")==null?"":v.get("policytypeCoverid").toString())
 								.build(); 
@@ -427,6 +431,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 				response.setVehicleUsage(StringUtils.isBlank(mdd.getVehicleUsageName())?"":mdd.getVehicleUsageName());
 				response.setVehcileId(vehicleId);
 				response.setApplicationNo(applicationNo);
+				response.setTypeOfBody(StringUtils.isBlank(mdd.getBodyName())?"":mdd.getBodyName());
 				response.setPremium(premium_list);
 				
 				commonRes.setMessage("SUCCESS");

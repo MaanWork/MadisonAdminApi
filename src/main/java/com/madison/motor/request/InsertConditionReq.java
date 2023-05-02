@@ -19,5 +19,11 @@ public class InsertConditionReq {
 	
 	@JsonProperty("QuoteNo")
 	private String quoteNo;
+	
+	@JsonProperty("Contype")
+	private String contype;
+	
+	@JsonProperty("Type")
+	private String type;
 
 }
