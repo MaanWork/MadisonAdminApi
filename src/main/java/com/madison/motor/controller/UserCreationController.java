@@ -39,4 +39,21 @@ public class UserCreationController {
 		return service.editAdminDetailsByLoginId(loginId,branchCode);
 	}
 
+	@GetMapping("/getBrokerByBranchCode")
+	public MadisonCommonRes getBrokerByBranchCode(@RequestParam("branchCode") String branchCode
+			,@RequestParam("appId") String appId) {
+		return service.getBrokerByBranchCode(branchCode,appId);
+	}
+	
+	@GetMapping("/editBrokerByAgencyCode")
+	public MadisonCommonRes editBrokerByAgencyCode(@RequestParam("agencyCode") String agencyCode
+			,@RequestParam("branchCode") String branchCode) {
+		return service.editBrokerByAgencyCode(agencyCode,branchCode);
+	}
+	
+	@GetMapping("/getProductDetailsByAgencyCode")
+	public MadisonCommonRes getProductDetailsByAgencyCode(@RequestParam("agencyCode") String agencyCode) {
+		return service.getProductDetailsByAgencyCode(agencyCode);
+	}
+	
 }

@@ -12,8 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.madison.motor.response.AdminDetailsRes;
+import com.madison.motor.response.BrokerDetailsRes;
 import com.madison.motor.response.EditAdminDetailRes;
+import com.madison.motor.response.EditBrokerRes;
 import com.madison.motor.response.EditUserDetailsRes;
+import com.madison.motor.response.GetProductDetailsRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.response.UserDetailsRes;
 import com.madison.motor.service.UserCreationService;
@@ -172,6 +175,131 @@ public class UserCreationServiceImpl implements UserCreationService {
 				
 				response.setMessage("SUCCESS");
 				response.setResponse(adminDetailRes);
+			}else {
+				response.setMessage("FAILED");
+				response.setResponse(null);
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return response;
+	}
+
+	@Override
+	public MadisonCommonRes getBrokerByBranchCode(String branchCode, String appId) {
+		MadisonCommonRes response =new MadisonCommonRes();
+		List<BrokerDetailsRes> brokerRes = new ArrayList<BrokerDetailsRes>();
+		try {
+			List<Tuple> list =query.getBrokerDetailsByBranchCode(branchCode,appId);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(d ->{
+					BrokerDetailsRes brokerDetailsRes =BrokerDetailsRes.builder()
+							.agencyCode(d.get("agencyCode")==null?"":d.get("agencyCode").toString())
+							.contactPerson(d.get("contactPerson")==null?"":d.get("contactPerson").toString())
+							.customerId(d.get("customerId")==null?"":d.get("customerId").toString())
+							.loginId(d.get("loginId")==null?"":d.get("loginId").toString())
+							.rsaBrokerCode(d.get("rsaBrokerCode")==null?"":d.get("rsaBrokerCode").toString())
+							.status(d.get("status")==null?"":d.get("status").toString())
+							.companyName(d.get("companyName")==null?"":d.get("companyName").toString())
+							.build();
+					brokerRes.add(brokerDetailsRes);
+				});
+				response.setMessage("SUCCESS");
+				response.setResponse(brokerRes);
+			}else {
+				response.setMessage("FAILED");
+				response.setResponse(null);
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return response;
+	}
+
+	@Override
+	public MadisonCommonRes editBrokerByAgencyCode(String agencyCode,String branchCode) {
+		MadisonCommonRes response = new MadisonCommonRes();
+		try {
+			Tuple user =query.editBrokerByAgencyCode(agencyCode,branchCode);
+			if(user!=null) {
+				EditBrokerRes detailsRes =EditBrokerRes.builder()
+						.address1(user.get("address1")==null?"":user.get("address1").toString())
+						.address2(user.get("address2")==null?"":user.get("address2").toString())
+						.agencyCode(user.get("agencyCode")==null?"":user.get("agencyCode").toString())
+						.attachedBranch(user.get("attachedBranch")==null?"":user.get("attachedBranch").toString())
+						.branchCode(user.get("branchCode")==null?"":user.get("branchCode").toString())
+						.city(user.get("city")==null?"":user.get("city").toString())
+						.country(user.get("countryName")==null?"":user.get("countryName").toString())
+						.countryId(user.get("country")==null?"":user.get("country").toString())
+						.dateOfBirth(user.get("dob")==null?"":user.get("dob").toString())
+						.email(user.get("email")==null?"":user.get("email").toString())
+						.emirate(user.get("emirate")==null?"":user.get("emirate").toString())
+						.entryDate(user.get("entryDate")==null?"":user.get("entryDate").toString())
+						.fax(user.get("fax")==null?"":user.get("fax").toString())
+						.firstName(user.get("firstName")==null?"":user.get("firstName").toString())
+						.gender(user.get("gender")==null?"":user.get("gender").toString())
+						.companyName(user.get("companyName")==null?"":user.get("companyName").toString())
+						.lastName(user.get("lastName")==null?"":user.get("lastName").toString())
+						.loginId(user.get("loginId")==null?"":user.get("loginId").toString())
+						.mobile(user.get("mobile")==null?"":user.get("mobile").toString())
+						.nationality(user.get("nationality")==null?"":user.get("nationality").toString())
+						.occupation(user.get("occupation")==null?"":user.get("occupation").toString())
+						.poBox(user.get("pobox")==null?"":user.get("pobox").toString())
+						.status(user.get("status")==null?"":user.get("status").toString())
+						.subBranch(user.get("subBranch")==null?"":user.get("subBranch").toString())
+						.telePhone(user.get("telephone")==null?"":user.get("telephone").toString())
+						.title(user.get("title")==null?"":user.get("title").toString())
+						//.userName(user.get("userName")==null?"":user.get("userName").toString())
+					//	.userType(user.get("usertype")==null?"":user.get("usertype").toString())
+						.build();
+				
+				response.setMessage("SUCCESS");
+				response.setResponse(detailsRes);
+			}else {
+				response.setMessage("FAILED");
+				response.setResponse(null);
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return response;
+	}
+
+	@Override
+	public MadisonCommonRes getProductDetailsByAgencyCode(String agencyCode) {
+		MadisonCommonRes response = new MadisonCommonRes();
+		List<Object> proList =new ArrayList<Object>();
+		try {
+			List<Tuple> list =query.getProductDetailsByAgencyCode(agencyCode);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(d->{
+					GetProductDetailsRes productDetailsRes =GetProductDetailsRes.builder()
+							.backDateAllowed(d.get("backDateAllowed")==null?"":d.get("backDateAllowed").toString())
+							.commission(d.get("commission")==null?"":d.get("commission").toString())
+							.discountOfPremium(d.get("discountOfPremium")==null?"":d.get("discountOfPremium").toString())
+							.freightDebitOption(d.get("freightDebitOption")==null?"":d.get("freightDebitOption").toString())
+							.insuranceEndLimit(d.get("insuranceEndLimit")==null?"":d.get("insuranceEndLimit").toString())
+							.loadingOfPremium(d.get("loadingOfPremium")==null?"":d.get("loadingOfPremium").toString())
+							.minPremiumAmount(d.get("minPremiumAmount")==null?"":d.get("minPremiumAmount").toString())
+							.payReceiptStatus(d.get("payReceiptStatus")==null?"":d.get("payReceiptStatus").toString())
+							.proCommission(d.get("proCommission")==null?"":d.get("proCommission").toString())
+							.productId(d.get("productId")==null?"":d.get("productId").toString())
+							.productName(d.get("productName")==null?"":d.get("productName").toString())
+							.proEndDate(d.get("proExpiryDate")==null?"":d.get("proExpiryDate").toString())
+							.proStartDate(d.get("proStartDate")==null?"":d.get("proStartDate").toString())
+							.provisionForPremium(d.get("provisionForPremium")==null?"":d.get("provisionForPremium").toString())
+							.receiptStatus(d.get("receiptStatus")==null?"":d.get("receiptStatus").toString())
+							.referal(d.get("referal")==null?"":d.get("referal").toString())
+							.specialDiscount(d.get("specialDiscount")==null?"":d.get("specialDiscount").toString())
+							.status(d.get("status")==null?"":d.get("status").toString())
+							.build();
+					proList.add(productDetailsRes);
+				});
+				response.setMessage("SUCCESS");
+				response.setResponse(proList);
 			}else {
 				response.setMessage("FAILED");
 				response.setResponse(null);

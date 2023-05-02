@@ -12,4 +12,10 @@ public interface UserCreationService {
 
 	MadisonCommonRes editAdminDetailsByLoginId(String loginId, String branchCode);
 
+	MadisonCommonRes getBrokerByBranchCode(String branchCode, String appId);
+
+	MadisonCommonRes editBrokerByAgencyCode(String agencyCode, String branchCode);
+
+	MadisonCommonRes getProductDetailsByAgencyCode(String agencyCode);
+
 }

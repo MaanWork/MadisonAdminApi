@@ -8,8 +8,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
@@ -1239,7 +1242,121 @@ public class CriteriaQueryImpl {
 	}
 	
 	
+	public List<Tuple> getBrokerDetailsByBranchCode(String branchCode, String appId){
+		try {
+			
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
+			Root<BrokerCompanyMaster> bcm =query.from(BrokerCompanyMaster.class);
+			
+			Subquery<String> loginId =query.subquery(String.class);
+			Root<LoginMaster> lm =loginId.from(LoginMaster.class);
+			
+			Subquery<String> agencyCode =loginId.subquery(String.class);
+			Root<BrokerCompanyMaster> bcm2 =agencyCode.from(BrokerCompanyMaster.class);
+			agencyCode.select(bcm2.get("agencyCode")).where(bcm2.get("branchCode").in(branchCode));
+			
+			loginId.select(lm.get("loginId")).where(lm.get("oaCode").in(agencyCode));
+			
+			
+			Expression<Object> status =cb.selectCase().when(cb.equal(bcm.get("status"), "Y"), "Active")
+					.when(cb.equal(bcm.get("status"), "N"), "DeActive").when(cb.equal(bcm.get("status"),"D"), "Delete")
+					.when(cb.equal(bcm.get("status"), "L"),"Locked").otherwise("Error");
+			
+			query.multiselect(bcm.get("customerId").alias("customerId"),bcm.get("contactPerson").alias("contactPerson"),
+					pi.get("agencyCode").alias("agencyCode"),bcm.get("rsaBrokerCode").alias("rsaBrokerCode"),status.alias("status"),
+					pi.get("loginId").alias("loginId"),bcm.get("companyName").alias("companyName"))
+			
+			.where(cb.equal(bcm.get("agencyCode"), pi.get("agencyCode")),bcm.get("branchCode").in(branchCode),
+					cb.equal(pi.get("applicationId"), appId),pi.get("loginId").in(loginId))
+			
+			.orderBy(cb.asc(cb.lower(bcm.get("companyName"))));
+					
+					
+			return em.createQuery(query).getResultList();	
+					
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		
+		return null;
+	}
 	
+	public Tuple editBrokerByAgencyCode(String agencyCode, String branchCode) {
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
+			Root<BrokerCompanyMaster> bcm =query.from(BrokerCompanyMaster.class);
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			
+			Subquery<String> countryName =query.subquery(String.class);
+			Root<CountryMaster> cm =countryName.from(CountryMaster.class);
+			countryName.select(cm.get("countryName")).where(cb.or(cb.equal(cb.upper(cm.get("countryName")), cb.upper(pi.get("country"))),
+					cb.equal(cm.get("countryId"),pi.get("country"))));
+			
+			Expression<Object> country =cb.selectCase(pi.get("country"))
+					.when("N", countryName).otherwise(pi.get("country"));
+			
+			query.multiselect(pi.get("title").alias("title"),pi.get("gender").alias("gender"),pi.get("firstName").alias("firstName"),
+					pi.get("lastName").alias("lastName"),pi.get("nationality").alias("nationality"),pi.get("telephone").alias("telephone"),
+					pi.get("fax").alias("fax"),pi.get("email").alias("email"),pi.get("mobile").alias("mobile"),pi.get("address1").alias("address1"),
+					pi.get("address2").alias("address2"),pi.get("occupation").alias("occupation"),pi.get("emirate").alias("emirate"),
+					pi.get("country").alias("country"),pi.get("pobox").alias("pobox"),bcm.get("companyName").alias("companyName"),
+					bcm.get("agencyCode").alias("agencyCode"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
+					bcm.get("status").alias("status"),bcm.get("address3").alias("address3"),bcm.get("city").alias("city"),bcm.get("branchCode").alias("branchCode"),
+					bcm.get("missippiId").alias("missippiId"),bcm.alias("approvedPreparedBy").alias("approvedPreparedBy"),bcm.get("rsaBrokerCode").alias("rsaBrokerCode"),
+					lm.get("loginId").alias("loginId"),bcm.get("acExecutiveId").alias("acExecutiveId"),pi.get("custName").alias("custName"),pi.get("custArNo").alias("custArNo"),
+					bcm.get("customerId").alias("customerId"),bcm.get("issuerCommissionOpencover").alias("issuerCommissionOpencover"),bcm.get("issuerCommissionOneoff")
+					.alias("issuerCommissionOneoff"),bcm.get("imagePath").alias("imagePath"),lm.get("attachedBranch").alias("attachedBranch"),lm.get("subBranch").alias("subBranch"),
+					bcm.get("brokerType").alias("brokerType"),country.alias("countryName"),cb.function("to_char", Date.class, pi.get("dob"),cb.literal("DD/MM/YYYY")).alias("dob"))
+										
+					
+			.where(cb.equal(lm.get("agencyCode"), bcm.get("agencyCode")),cb.equal(pi.get("agencyCode"),lm.get("agencyCode")),
+					cb.equal(pi.get("agencyCode"), agencyCode),cb.equal(pi.get("applicationId"), "2"),bcm.get("branchCode").in(branchCode));
+				
+			return em.createQuery(query).getSingleResult();
+						
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		
+		return null;
+	}
 	
+	public List<Tuple> getProductDetailsByAgencyCode(String agencyCode){
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			Root<LoginUserDetails> lud =query.from(LoginUserDetails.class);
+			Root<ProductMaster> pm =query.from(ProductMaster.class);
+			
+			query.multiselect(pm.get("productName").alias("productName"),lud.get("productId").alias("productId"),lud.get("commission").alias("commission"),
+					lud.get("insuranceEndLimit").alias("insuranceEndLimit"),lud.get("specialDiscount").alias("specialDiscount"),cb.coalesce(lm.get("referal"), "N")
+					.alias("referal"),lud.get("status").alias("status"),cb.coalesce(lud.get("discountOfPremium"), 0).alias("discountOfPremium"),lud.get("minPremiumAmount")
+					.alias("minPremiumAmount"),lud.get("backDateAllowed").alias("backDateAllowed"),cb.coalesce(lud.get("proCommission"), 0).alias("proCommission"),
+					cb.function("to_char", Date.class, lud.get("proStartDate"),cb.literal("DD/MM/YYYY")).alias("proStartDate"),cb.function("to_char", Date.class, 
+					lud.get("proExpiryDate"),cb.literal("DD/MM/YYYY")).alias("proExpiryDate"),cb.coalesce(lud.get("loadingOfPremium"), 0).alias("loadingOfPremium"),
+					cb.coalesce(lud.get("payReceiptStatus"), "N").alias("payReceiptStatus"),cb.coalesce(lud.get("receiptStatus"), "N").alias("receiptStatus"),
+					cb.coalesce(lud.get("freightDebitOption"), "N").alias("freightDebitOption"),cb.coalesce(lud.get("provisionForPremium"), "N")
+					.alias("provisionForPremium"))
+					
+				.where(cb.equal(lm.get("agencyCode"), lud.get("agencyCode")),cb.equal(lud.get("productId"),pm.get("productId")),
+						cb.equal(lud.get("agencyCode"),agencyCode))
+						
+				.orderBy(cb.asc(lud.get("productId")));		
+						
+				return em.createQuery(query).getResultList();
+					
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return null;
+	}
 	
 }
