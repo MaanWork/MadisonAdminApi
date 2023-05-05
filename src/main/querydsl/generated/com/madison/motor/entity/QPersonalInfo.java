@@ -49,7 +49,7 @@ public class QPersonalInfo extends EntityPathBase<PersonalInfo> {
 
     public final StringPath custNameArabic = createString("custNameArabic");
 
-    public final NumberPath<java.math.BigDecimal> customerId = createNumber("customerId", java.math.BigDecimal.class);
+    public final NumberPath<Long> customerId = createNumber("customerId", Long.class);
 
     public final StringPath customerLoginId = createString("customerLoginId");
 

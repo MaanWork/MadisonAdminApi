@@ -2,7 +2,9 @@ package com.madison.motor.serviceImpl;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,8 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-
+import com.madison.motor.entity.BranchMaster;
+import com.madison.motor.entity.BrokerBranchMaster;
 import com.madison.motor.entity.ListItemValue;
+import com.madison.motor.repository.BranchMasterRepository;
+import com.madison.motor.repository.BrokerBranchMasterRepository;
 import com.madison.motor.repository.ListItemValueRepository;
 import com.madison.motor.request.GetConditionReq;
 import com.madison.motor.request.InsertConditionReq;
@@ -36,6 +41,12 @@ public class DropDownServiceImpl implements DropDownService{
 	
 	@Autowired
 	private CriteriaQueryImpl query;
+	
+	@Autowired
+	private BranchMasterRepository branchRepo;
+	
+	@Autowired
+	private BrokerBranchMasterRepository brokerBranchRepo;
 	
 	@Override
 	public MadisonCommonRes getPortFolioType() {
@@ -182,5 +193,144 @@ public class DropDownServiceImpl implements DropDownService{
 		}
 		return res;
 	}
+
+	@Override
+	public MadisonCommonRes getAttachedBranch() {
+		MadisonCommonRes res = new MadisonCommonRes();
+		Set<DropdownRes> resList =new LinkedHashSet<DropdownRes>();
+		try {
+		List<BranchMaster> list =branchRepo.findByStatusOrderByBranchNameAsc("Y");
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach(d ->{
+				DropdownRes dropdownRes =DropdownRes.builder()
+						.code(StringUtils.isBlank(d.getBranchCode())?"":d.getBranchCode())
+						.description(StringUtils.isBlank(d.getBranchName())?"":d.getBranchName())
+						.build();
+				resList.add(dropdownRes);
+			});
+			res.setMessage("SUCCESS");
+			res.setResponse(resList);
+		}else {
+			res.setMessage("FAILED");
+			res.setResponse(null);
+		}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getNationality() {
+		MadisonCommonRes res = new MadisonCommonRes();
+		Set<DropdownRes> resList =new LinkedHashSet<DropdownRes>();
+		try {
+		List<Tuple> list =query.getNationality();
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach(d ->{
+				DropdownRes dropdownRes =DropdownRes.builder()
+						.code(d.get("countryId")==null?"":d.get("countryId").toString())
+						.description(d.get("nationalityName")==null?"":d.get("nationalityName").toString())
+						.build();
+				resList.add(dropdownRes);
+			});
+			res.setMessage("SUCCESS");
+			res.setResponse(resList);
+		}else {
+			res.setMessage("FAILED");
+			res.setResponse(null);
+		}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getUserType() {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response =new ArrayList<DropdownRes>();
+		try {
+			List<ListItemValue>list =listItemRepo.findByItemTypeIgnoreCaseAndStatusIgnoreCase("USERTYPE","Y");
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(p ->{
+					DropdownRes dropdownRes =DropdownRes.builder()
+							.code(StringUtils.isBlank(p.getItemCode())?"":p.getItemCode())
+							.description(StringUtils.isBlank(p.getItemValue())?"":p.getItemValue())
+							.build();
+					
+					response.add(dropdownRes);
+				});
+				res.setMessage("FAILED");
+				res.setResponse(response);
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse(response);
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getExeutiveBdm() {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> resList =new ArrayList<DropdownRes>();
+		try {
+			List<HashMap<String,Object>> list =query.getExeutiveBdm();	
+			if(list.size()>0) {
+				list.forEach(p ->{
+					DropdownRes r =DropdownRes.builder()
+						.code(p.get("AC_EXECUTIVE_ID")==null?"":p.get("AC_EXECUTIVE_ID").toString())
+						.description(p.get("AC_EXECUTIVE_NAME")==null?"":p.get("AC_EXECUTIVE_NAME").toString())
+						.build();
+				resList.add(r);
+				});
+			res.setMessage("SUCCESS");
+			res.setResponse(resList);
+		}else {
+			res.setMessage("FAILED");
+			res.setResponse(resList);
+		}
+	}catch (Exception e) {
+		log.error(e);
+		e.printStackTrace();
+	}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getsubBranchByBranchCode(String branchCode) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> resList =new ArrayList<DropdownRes>();
+
+		try {
+			String[] branchArray =branchCode.split(",");
+			List<BrokerBranchMaster> list= brokerBranchRepo.findByMgenBranchIdInAndStatusOrderByBranchId(branchArray,"Y");
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(d ->{
+					DropdownRes dropdownRes =DropdownRes.builder()
+							.code(StringUtils.isBlank(d.getBranchCode())?"":d.getBranchCode())
+							.description(StringUtils.isBlank(d.getBranchName())?"":d.getBranchName())
+							.build();
+					resList.add(dropdownRes);
+				});
+				res.setMessage("SUCCESS");
+				res.setResponse(resList);
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse(resList);
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return res;
+	}
+	
 
 }

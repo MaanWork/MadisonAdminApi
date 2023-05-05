@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,10 +33,13 @@ import javax.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.query.NativeQuery;
+import org.hibernate.transform.Transformers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.madison.motor.entity.BranchMaster;
+import com.madison.motor.entity.BrokerCommissionDetail;
 import com.madison.motor.entity.BrokerCompanyMaster;
 import com.madison.motor.entity.CountryMaster;
 import com.madison.motor.entity.CurrencyMaster;
@@ -56,9 +60,13 @@ import com.madison.motor.entity.PersonalInfo;
 import com.madison.motor.entity.ProductMaster;
 import com.madison.motor.entity.RoadSideAssistantDetails;
 import com.madison.motor.request.GetEmiReportReq;
+import com.madison.motor.request.GetOrEditProductReq;
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.GetProductReq;
+import com.madison.motor.request.GetUserDetailsReq;
 import com.madison.motor.request.ModifyRateDetReq;
 import com.madison.motor.request.PortfolioSearchReq;
+import com.madison.motor.request.ProductReq;
 import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
 import com.madison.motor.request.RejectEditReq;
@@ -829,7 +837,7 @@ public class CriteriaQueryImpl {
 		return null;
 	}
 	
-	public List<Tuple> getUserListByBranchCode(String branchCode){
+	public List<Tuple> getUserListByBranchCode(GetUserDetailsReq req){
 		List<Predicate> predicates =new ArrayList<Predicate>();
 		try {
 			CriteriaBuilder cb =em.getCriteriaBuilder();
@@ -856,7 +864,12 @@ public class CriteriaQueryImpl {
 			predicates.add(cb.equal(pi.get("agencyCode"), lm.get("agencyCode")));
 			predicates.add(cb.not(lm.get("loginId").in("NONE")));
 			predicates.add(cb.equal(pi.get("applicationId"), "2"));
-			predicates.add(cb.equal(lm.get("branchCode"), branchCode));
+			predicates.add(cb.equal(lm.get("branchCode"), req.getBranchCode()));
+		
+			if(StringUtils.isNotBlank(req.getBrokerCode()))
+				predicates.add(cb.equal(lm.get("oaCode"), req.getBrokerCode()));
+
+			
 			
 			Predicate predicate_array []=new Predicate[predicates.size()];
 			predicates.toArray(predicate_array);
@@ -882,7 +895,6 @@ public class CriteriaQueryImpl {
 			CriteriaQuery<Tuple> query =cb.createTupleQuery();
 			Root<PersonalInfo> pi =query.from(PersonalInfo.class);
 			Root<LoginMaster> lm =query.from(LoginMaster.class);
-			
 			
 			Subquery<String> userName =query.subquery(String.class);
 			Root<LoginMaster> lm2 =userName.from(LoginMaster.class);
@@ -1357,6 +1369,189 @@ public class CriteriaQueryImpl {
 			log.error(e);
 		}
 		return null;
+	}
+	
+	public Long isProductExits(String productId,String agencyCode) {
+		Long count =0L;
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Long> query =cb.createQuery(Long.class);
+			Root<LoginUserDetails> lud =query.from(LoginUserDetails.class);
+			query.select(cb.count(lud)).where(cb.equal(lud.get(productId), productId),cb.equal(lud.get("agencyCode"), agencyCode));
+			count =em.createQuery(query).getSingleResult();
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return count;
+	}
+
+	@Transactional
+	public Integer updateProductByAgencyCodeAndProductId(ProductReq p, String agencyCode,
+			LoginMaster lm, PersonalInfo pi) {
+		Integer count =0;
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaUpdate<LoginUserDetails> query =cb.createCriteriaUpdate(LoginUserDetails.class);
+			Root<LoginUserDetails> lud =query.from(LoginUserDetails.class);
+			String op_cover ="";
+			String issue_type ="Y".equals(lm.getIsB2c())?"90011":"88888";
+			if ("11".equalsIgnoreCase(p.getProductId()))
+				op_cover = p.getOpenCoverNo();
+			
+			//query.set(lud.get("commision"), "");
+			query.set(lud.get("insuranceEndLimit"), p.getSumInsured());
+			query.set(lud.get("status"), "Y");
+			//query.set(lud.get("discountOfPremium"), "");
+			//query.set(lud.get("minPremiumAmount"), "");
+			//query.set(lud.get("backDateAllowed"), "");
+			//query.set(lud.get("loadingOfPremium"), "");
+			//query.set(lud.get("payReceiptStatus"), "");
+			query.set(lud.get("freightDebitOption"), p.getCreditYn());
+			query.set(lud.get("provisionForPremium"), "");
+			//query.set(lud.get("receiptStatus"), "");
+			query.set(lud.get("openCoverNo"), op_cover);
+			query.set(lud.get("specialDiscount"), p.getSpecialDiscount());
+			query.set(lud.get("loginId"), lm.getLoginId());
+			query.set(lud.get("issuertype"), issue_type);
+			query.set(lud.get("isB2c"), lm.getIsB2c());
+			
+			query.where(cb.equal(lud.get("productId"), p.getProductId()),cb.equal(lud.get("agencyCode"), agencyCode));
+			count =em.createQuery(query).executeUpdate();
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return count;
+		
+	}
+	
+	
+	//@PostConstruct
+	public List<Map<String,Object>> getPoductDetailsByBranchCode(){
+		try {
+			String queryTxt ="SELECT pm.product_name uproductname, pm.product_id uproductid, lud.special_discount specialdis, "
+					+ "lud.freight_debit_option freight, lud.insurance_end_limit insendlimit, lud.pay_receipt_status receipt,"
+					+ "lud.open_cover_no, decode(lud.login_id, NULL, 'N', 'Y') product FROM product_master pm LEFT OUTER JOIN "
+					+ "login_user_details lud ON pm.product_id = lud.product_id AND lud.agency_code =:agencyCode AND "
+					+ "lud.oa_code =:oaCode WHERE pm.branch_code =( SELECT belonging_branch FROM branch_master WHERE branch_code =:branchCode) "
+					+ "AND pm.status =:status ORDER BY lud.product_id";
+			
+			@SuppressWarnings("unchecked")
+			List<Map<String,Object>>  list = em.createNativeQuery(queryTxt)
+					.setParameter("agencyCode", "1000397")
+					.setParameter("oaCode", "90075")
+					.setParameter("branchCode", "01")
+					.setParameter("status", "Y")
+					//.unwrap(NativeQuery.class)
+					.getResultList();
+				
+			System.out.println(list.size());
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return null;
+	}
+	
+	
+	public List<Tuple> getPoductDetails(GetProductReq req){
+		try {
+			String queryTxt ="select pm.productName as product,pm.productId as productId,lud.specialDiscount as specialDiscount,"
+					+ "lud.freightDebitOption as freightDebitOption,lud.insuranceEndLimit as insuranceEndLimit,lud.payReceiptStatus as payReceiptStatus,"
+					+ "lud.openCoverNo,case when lud.loginId is null then 'N' else 'Y' end as status from ProductMaster pm left outer join "
+					+ "LoginUserDetails lud on pm.productId=lud.productId and lud.agencyCode=:agencyCode and lud.oaCode=:oaCode where "
+					+ "pm.branchCode=(select belongingBranch from BranchMaster bm where bm.branchCode=:branchCode) and pm.status=:status "
+					+ "order by lud.productId asc";
+			return em.createQuery(queryTxt,Tuple.class)
+					.setParameter("agencyCode", req.getAgencyCode())
+					.setParameter("oaCode", req.getOaCode())
+					.setParameter("branchCode", req.getBranchCode())
+					.setParameter("status", "Y")
+					.getResultList();
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return null;
+	}
+	
+	
+	public List<Tuple> editProduct(GetOrEditProductReq req){
+		try {
+			CriteriaBuilder cb =em.getCriteriaBuilder();
+			CriteriaQuery<Tuple> query =cb.createTupleQuery();
+			Root<LoginMaster> lm =query.from(LoginMaster.class);
+			Root<LoginUserDetails> lud =query.from(LoginUserDetails.class);
+			Root<ProductMaster> pm =query.from(ProductMaster.class);
+			Root<BrokerCommissionDetail> bcm =query.from(BrokerCommissionDetail.class);
+			
+			Subquery<BigDecimal> amendId =query.subquery(BigDecimal.class);
+			Root<BrokerCommissionDetail> com =amendId.from(BrokerCommissionDetail.class);
+			amendId.select(cb.max(com.get("amendId"))).where(cb.equal(bcm.get("agencyCode"), com.get("agencyCode")),
+					cb.equal(bcm.get("productId"), com.get("productId"))
+					);
+			
+			query.multiselect(pm.get("productName").alias("productName"),lud.get("productId").alias("productId"),lud.get("commission").alias("commission"),
+					lud.get("insuranceEndLimit").alias("insuranceEndLimit"),lud.get("specialDiscount").alias("specialDiscount"),cb.coalesce(lm.get("referal"), "N")
+					.alias("referal"),lud.get("status").alias("status"),cb.coalesce(lud.get("discountOfPremium"), 0).alias("discountOfPremium"),lud.get("minPremiumAmount")
+					.alias("minPremiumAmount"),lud.get("backDateAllowed").alias("backDateAllowed"),cb.coalesce(lud.get("proCommission"), 0).alias("proCommission"),
+					cb.function("to_char", Date.class, lud.get("proStartDate"),cb.literal("DD/MM/YYYY")).alias("proStartDate"),cb.function("to_char", Date.class, 
+					lud.get("proExpiryDate"),cb.literal("DD/MM/YYYY")).alias("proExpiryDate"),cb.coalesce(lud.get("loadingOfPremium"), 0).alias("loadingOfPremium"),
+					cb.coalesce(lud.get("payReceiptStatus"), "N").alias("payReceiptStatus"),cb.coalesce(lud.get("receiptStatus"), "N").alias("receiptStatus"),
+					cb.coalesce(lud.get("freightDebitOption"), "N").alias("freightDebitOption"),cb.coalesce(lud.get("provisionForPremium"), "N")
+					.alias("provisionForPremium"),cb.function("to_char", Date.class, bcm.get("effectiveDate"),cb.literal("DD/MM/YYY")).alias("effectiveDate"),
+					cb.function("to_char", Date.class, bcm.get("endDate"),cb.literal("DD/MM/YYY")).alias("endDate"),bcm.get("policyFee").alias("policyFee"),
+					bcm.get("otherFee").alias("otherFee"),bcm.get("suminsuredStart").alias("suminsuredStart"),bcm.get("suminsuredEnd").alias("suminsuredEnd"),
+					bcm.get("policytype").alias("policytype"),bcm.get("amendId").alias("amendId"))
+					
+					
+				.where(cb.equal(lm.get("agencyCode"), lud.get("agencyCode")),cb.equal(lud.get("productId"),pm.get("productId")),
+						cb.equal(lud.get("agencyCode"),req.getAgencyCode()),cb.equal(lud.get("productId"), req.getProductId()),cb.equal(lud.get("agencyCode"), bcm.get("agencyCode")),
+						cb.equal(lud.get("productId"), bcm.get("productId")),cb.equal(bcm.get("amendId"), amendId))
+						
+				.orderBy(cb.asc(lud.get("productId")));		
+					
+			
+				return em.createQuery(query).getResultList();
+					
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return null;
+	}
+	
+	public List<Tuple> getNationality(){
+		try {
+			String queryTxt ="select cm.countryId as countryId,cm.nationalityName as nationalityName from CountryMaster cm where cm.amendId || cm.countryId in(select max(cm2.amendId)||"
+					+ "cm2.countryId from CountryMaster cm2 group by cm2.countryId) and cm.nationalityName is not null order by "
+					+ "cm.nationalityName asc";
+			return em.createQuery(queryTxt,Tuple.class).getResultList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return  null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<HashMap<String, Object>> getExeutiveBdm() {
+		List<HashMap<String, Object>>  list=null;
+		try {
+			String queryTxt="SELECT DISTINCT b.ac_executive_id, b.ac_executive_name FROM login_executive_details b "
+					+ "WHERE b.status = 'Y' AND amend_id =( SELECT MAX(a.amend_id) FROM login_executive_details a "
+					+ "WHERE a.ac_executive_id = b.ac_executive_id) ORDER BY b.ac_executive_name";
+			list = em.createNativeQuery(queryTxt)
+					.unwrap(NativeQuery.class)
+					.setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP)
+					.getResultList();
+		}catch (Exception e) {
+			e.printStackTrace();
+			log.error(e);
+		}
+		return list;
 	}
 	
 }

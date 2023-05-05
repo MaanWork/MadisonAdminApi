@@ -12,8 +12,11 @@
 
 package com.madison.motor.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
 import com.madison.motor.entity.BrokerBranchMaster;
 import com.madison.motor.entity.BrokerBranchMasterId;
@@ -26,7 +29,10 @@ import com.madison.motor.entity.BrokerBranchMasterId;
  */
  
  
- 
+
+@Repository
 public interface BrokerBranchMasterRepository  extends JpaRepository<BrokerBranchMaster,BrokerBranchMasterId > , JpaSpecificationExecutor<BrokerBranchMaster> {
+
+	List<BrokerBranchMaster> findByMgenBranchIdInAndStatusOrderByBranchId(String[] branchArray, String string);
 
 }

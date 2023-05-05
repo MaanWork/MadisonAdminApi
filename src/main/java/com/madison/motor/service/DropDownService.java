@@ -20,4 +20,14 @@ public interface DropDownService {
 
 	MadisonCommonRes insertCondition(List<InsertConditionReq> req);
 
+	MadisonCommonRes getAttachedBranch();
+
+	MadisonCommonRes getNationality();
+
+	MadisonCommonRes getUserType();
+
+	MadisonCommonRes getExeutiveBdm();
+
+	MadisonCommonRes getsubBranchByBranchCode(String branchCode);
+
 }

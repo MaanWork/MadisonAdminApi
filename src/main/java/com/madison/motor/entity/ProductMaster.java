@@ -117,8 +117,9 @@ private static final long serialVersionUID = 1L;
     @OneToMany(mappedBy="productMaster")
     private List<HomePositionMaster> listOfHomePositionMaster ; */
 
-
-
+    @OneToMany
+    private List<LoginUserDetails> b;
+   
 }
 
 

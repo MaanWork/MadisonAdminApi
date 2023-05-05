@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
 import com.querydsl.core.types.Path;
+import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -22,6 +23,8 @@ public class QProductMaster extends EntityPathBase<ProductMaster> {
     public final NumberPath<java.math.BigDecimal> amendId = createNumber("amendId", java.math.BigDecimal.class);
 
     public final StringPath appLoginUrl = createString("appLoginUrl");
+
+    public final ListPath<LoginUserDetails, QLoginUserDetails> b = this.<LoginUserDetails, QLoginUserDetails>createList("b", LoginUserDetails.class, QLoginUserDetails.class, PathInits.DIRECT2);
 
     public final StringPath branchCode = createString("branchCode");
 

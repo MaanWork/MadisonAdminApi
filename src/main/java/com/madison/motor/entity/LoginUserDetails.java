@@ -13,18 +13,34 @@
 package com.madison.motor.entity;
 
 
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
-import javax.persistence.Table;
-
-import lombok.*;
-import javax.persistence.*;
 import java.io.Serializable;
-import java.util.List;
-
 import java.math.BigDecimal;
 import java.util.Date;
-import javax.persistence.*;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 
 
@@ -248,6 +264,8 @@ private static final long serialVersionUID = 1L;
 
     //--- ENTITY LINKS ( RELATIONSHIP )
 
+  //  @ManyToMany()
+  //  private List<ProductMaster> productMaster ;
 
 }
 

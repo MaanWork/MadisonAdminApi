@@ -55,4 +55,28 @@ public class DropDownController {
 	}
 	
 
+	@GetMapping("/get/attached/branch")
+	public MadisonCommonRes getAttachedBranch() {
+		return service.getAttachedBranch();
+	}
+	
+	@GetMapping("/get/nationality")
+	public MadisonCommonRes getNationality() {
+		return service.getNationality();	
+	}
+	
+	@GetMapping("/get/usertype")
+	public MadisonCommonRes getUserType() {
+		return service.getUserType();
+	}
+	
+	@GetMapping("/get/exeutive/bdm")
+	public MadisonCommonRes getExeutiveBdm() {
+		return service.getExeutiveBdm();
+	}
+	
+	@GetMapping("/get/subBranchByBranchCode")
+	public MadisonCommonRes getsubBranchByBranchCode(@RequestParam("branchCode") String branchCode) {
+		return service.getsubBranchByBranchCode(branchCode);
+	}
 }

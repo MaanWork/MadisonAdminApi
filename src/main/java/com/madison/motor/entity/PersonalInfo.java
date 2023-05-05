@@ -53,7 +53,7 @@ private static final long serialVersionUID = 1L;
     //--- ENTITY PRIMARY KEY 
     @Id
     @Column(name="CUSTOMER_ID", nullable=false)
-    private BigDecimal customerId ;
+    private Long customerId ;
 
     //--- ENTITY DATA FIELDS 
     @Column(name="APPLICATION_ID", length=25)

@@ -12,8 +12,11 @@
 
 package com.madison.motor.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
 import com.madison.motor.entity.BranchMaster;
 import com.madison.motor.entity.BranchMasterId;
@@ -27,7 +30,11 @@ import com.madison.motor.entity.BranchMasterId;
  */
  
  
- 
+@Repository 
 public interface BranchMasterRepository  extends JpaRepository<BranchMaster,BranchMasterId > , JpaSpecificationExecutor<BranchMaster> {
 
+	BranchMaster findByBranchCode(String branchCode);
+
+
+	List<BranchMaster> findByStatusOrderByBranchNameAsc(String status);
 }
