@@ -24,7 +24,9 @@ import com.madison.motor.entity.ListItemValue;
 import com.madison.motor.repository.BranchMasterRepository;
 import com.madison.motor.repository.BrokerBranchMasterRepository;
 import com.madison.motor.repository.ListItemValueRepository;
+import com.madison.motor.request.GetAdminProductReq;
 import com.madison.motor.request.GetConditionReq;
+import com.madison.motor.request.GetReferralProductReq;
 import com.madison.motor.request.InsertConditionReq;
 import com.madison.motor.response.DropdownRes;
 import com.madison.motor.response.MadisonCommonRes;
@@ -331,6 +333,142 @@ public class DropDownServiceImpl implements DropDownService{
 		}
 		return res;
 	}
+
+	@Override
+	public MadisonCommonRes getcountryByBranchCode(String branchCode) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> relist = new ArrayList<DropdownRes>();
+		List<Tuple> list = query.getcountryByBranchCode(branchCode);
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach( m ->{
+				DropdownRes r = DropdownRes.builder()
+				.code(m.get("code")==null?"":m.get("code").toString())
+				.description(m.get("description")==null?"":m.get("description").toString())
+				.build();
+				relist.add(r);
+			});
+			res.setMessage("SUCCESS");
+			res.setResponse(relist);
+		}else {
+			res.setMessage("FAILED");
+			res.setResponse(relist);
+		}
+		
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getstatus() {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response = new ArrayList<DropdownRes>();
+		List<Tuple> list = query.getstatus();
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach(m->{
+				DropdownRes r = DropdownRes.builder()
+				.code(m.get("code")==null?"":m.get("code").toString())
+				.description(m.get("description")==null?"":m.get("description").toString())
+				.build();
+				response.add(r);
+			});
+			res.setMessage("SUCCESS");
+			res.setResponse(response);
+		}else {
+			res.setMessage("FAILED");
+			res.setResponse(response);
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getbranchListByAgencyCode(String agencyCode) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response = new ArrayList<>();
+		List<Tuple> list = listItemRepo.getbranchListByAgencyCode(agencyCode);
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach(m -> {
+				DropdownRes r = DropdownRes.builder()
+				.code(m.get("BRANCH_CODE")==null?"":m.get("BRANCH_CODE").toString())
+				.description(m.get("BRANCH_NAME")==null?"":m.get("BRANCH_NAME").toString())
+				.build();
+				response.add(r);
+			});
+			res.setResponse(response);
+			res.setMessage("SUCCESS");
+		}else {
+			res.setResponse(response);
+			res.setMessage("ERROR");
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getAdminUsertype(String branchCode,String appId) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response = new ArrayList<DropdownRes>();
+		List<Tuple> list = listItemRepo.getAdminUsertype(branchCode,"2".equalsIgnoreCase(appId)?"Marine":appId);
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach( m->{
+				DropdownRes k = DropdownRes.builder()
+				.code(m.get("Code")==null?"":m.get("Code").toString())
+				.description(m.get("Description")==null?"":m.get("Description").toString())
+				.build();
+				response.add(k);
+			});
+			res.setResponse(response);
+			res.setMessage("SUCCESS");
+		}else {
+			res.setResponse(response);
+			res.setMessage("FAILED");
+		}
+		return res;
+	}
 	
+	public MadisonCommonRes getAdminProduct(GetAdminProductReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response = new ArrayList<DropdownRes>();
+		List<Tuple> list = query.getAdminProduct(req.getBranchCode(),req.getAgencyCode());
+		
+		if(!CollectionUtils.isEmpty(list)) {
+			list.forEach(m->{
+				DropdownRes k = DropdownRes.builder()
+				.code(m.get("Code")==null?"":m.get("Code").toString())
+				.description(m.get("Description")==null?"":m.get("Description").toString())
+				.build();
+				response.add(k);
+			});
+			res.setResponse(response);
+			res.setMessage("SUCCESS");
+		}else {
+			res.setResponse(response);
+			res.setMessage("FAILED");
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getReferralProduct(GetReferralProductReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<DropdownRes> response = new ArrayList<DropdownRes>();
+		try {
+			List<Tuple> list = query.getReferralProduct(req);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(m->{
+					DropdownRes k = DropdownRes.builder()
+						.code(m.get("code")==null?"":m.get("code").toString())
+						.description(m.get("description")==null?"":m.get("description").toString())
+						.build();
+					response.add(k);
+				});
+				res.setResponse(response);
+				res.setMessage("SUCCESS");
+			}else {
+				res.setResponse(response);
+				res.setMessage("ERROR");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+			return res;
+	}
 
 }

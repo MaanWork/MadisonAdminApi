@@ -1,5 +1,7 @@
 package com.madison.motor.controller;
 
+import java.text.ParseException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.GetReferalByQuoteReq;
+import com.madison.motor.request.GetReferalEntryDateReq;
 import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
@@ -71,5 +75,16 @@ public class PortfolioController {
 			@RequestParam ("vehicleId") String vehicleId) {
 		return service.editModifyRate(applicationNo,vehicleId);
 	}
+	
+	@PostMapping("/get/referal/entrydate")
+	public MadisonCommonRes GetReferalEntryDate(@RequestBody GetReferalEntryDateReq req) throws ParseException {
+		return service.GetReferalEntryDate(req);
+	}
+	
+	@PostMapping("/get/referalByquote")
+	public MadisonCommonRes GetReferalByQuote(@RequestBody GetReferalByQuoteReq req) {
+		return service.GetReferalByQuote(req);
+	}
+	
 	
 }

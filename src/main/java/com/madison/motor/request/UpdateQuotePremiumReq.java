@@ -25,5 +25,7 @@ public class UpdateQuotePremiumReq {
 	private String quoteStatus;
 	@JsonProperty("Remarks")
 	private String remarks;
+	@JsonProperty("InstallmentYN")
+	private String installmentYN;
 
 }

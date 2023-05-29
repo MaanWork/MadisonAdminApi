@@ -4,13 +4,16 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.madison.motor.request.GetAdminProductReq;
 import com.madison.motor.request.GetConditionReq;
+import com.madison.motor.request.GetReferralProductReq;
 import com.madison.motor.request.InsertConditionReq;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.service.DropDownService;
@@ -78,5 +81,31 @@ public class DropDownController {
 	@GetMapping("/get/subBranchByBranchCode")
 	public MadisonCommonRes getsubBranchByBranchCode(@RequestParam("branchCode") String branchCode) {
 		return service.getsubBranchByBranchCode(branchCode);
+	}
+	
+	@GetMapping("get/countryByBranchCode")
+	public MadisonCommonRes getcountryByBranchCode(@RequestParam("branchCode") String branchCode) {
+		return service.getcountryByBranchCode(branchCode);
+	}
+	@GetMapping("get/status")
+	public MadisonCommonRes getstatus() {
+		return service.getstatus();
+	}
+	
+	@GetMapping("get/branchListByAgencyCode/{agencyCode}")
+	public MadisonCommonRes getbranchListByAgencyCode(@PathVariable("agencyCode") String agencyCode) {
+		return service.getbranchListByAgencyCode(agencyCode);
+	}
+	@GetMapping("get/admin/usertype")
+	public MadisonCommonRes getAdminUsertype(@RequestParam ("branchCode") String branchCode,@RequestParam ("appId") String appId) {
+		return service.getAdminUsertype(branchCode,appId);
+	}
+	@PostMapping("get/admin/products")
+	public MadisonCommonRes getAdminProduct(@RequestBody GetAdminProductReq req) {
+		return service.getAdminProduct(req);
+	}
+	@PostMapping("get/referral/product")
+	public MadisonCommonRes getReferralProduct(@RequestBody GetReferralProductReq req) {
+		return service.getReferralProduct(req);
 	}
 }

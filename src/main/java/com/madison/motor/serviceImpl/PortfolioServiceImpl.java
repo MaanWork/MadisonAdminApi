@@ -2,9 +2,11 @@ package com.madison.motor.serviceImpl;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,6 +25,8 @@ import com.madison.motor.entity.MotorDataDetail;
 import com.madison.motor.repository.HomePositionMasterRepository;
 import com.madison.motor.repository.MotorDataDetailRepository;
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.GetReferalByQuoteReq;
+import com.madison.motor.request.GetReferalEntryDateReq;
 import com.madison.motor.request.ModifyRateDetReq;
 import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
@@ -30,6 +34,7 @@ import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
 import com.madison.motor.request.UpdateQuotePremiumReq;
 import com.madison.motor.response.GetPortfolioRecordRes;
+import com.madison.motor.response.GetReferalByQuoteRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.response.PortFolioSearchRes;
 import com.madison.motor.response.PremiumRes;
@@ -445,5 +450,59 @@ public class PortfolioServiceImpl implements PortfolioService{
 			e.printStackTrace();
 		}
 		return commonRes;
+	}
+
+
+	@Override
+	public MadisonCommonRes GetReferalEntryDate(GetReferalEntryDateReq req) throws ParseException {
+		MadisonCommonRes res = new MadisonCommonRes();
+		String entrydate = query.GetReferalEntryDate(req);
+		if(StringUtils.isNotBlank(entrydate)) {
+			res.setResponse(entrydate);
+			res.setMessage("SUCCESS");
+		}else {
+			res.setResponse(entrydate);
+			res.setMessage("FAILED");
+		}
+		return res;
+	}
+
+
+	@Override
+	public MadisonCommonRes GetReferalByQuote(GetReferalByQuoteReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<GetReferalByQuoteRes> response = new ArrayList<GetReferalByQuoteRes>();
+		try {
+			List<Tuple> list = query.GetReferalByQuote(req);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(m->{
+					GetReferalByQuoteRes r = GetReferalByQuoteRes.builder()
+					.quoteCreated(m.get("QuoteCreated")==null?"":m.get("QuoteCreated").toString())
+					.applicationNo(m.get("applicationNo")==null?"":m.get("applicationNo").toString())
+					.loginId(m.get("loginId")==null?"":m.get("loginId").toString())
+					.quoteNo(m.get("quoteNo")==null?"":m.get("quoteNo").toString())
+					.remarks(m.get("remarks")==null?"":m.get("remarks").toString())
+					.referralDescription(m.get("referralDescription")==null?"":m.get("referralDescription").toString())
+					.summaryRemarks(m.get("summaryRemarks")==null?"":m.get("summaryRemarks").toString())
+					.schemeId(m.get("schemeId")==null?"":m.get("schemeId").toString())
+					.applicationId(m.get("applicationId")==null?"":m.get("applicationId").toString())
+					.status(m.get("status")==null?"":m.get("status").toString())
+					.customerId(m.get("customerId")==null?"":m.get("customerId").toString())
+					.custname(m.get("custname")==null?"":m.get("custname").toString())
+					.brokername(m.get("brokername")==null?"":m.get("brokername").toString())
+					.statusdesc(m.get("statusdesc")==null?"":m.get("statusdesc").toString())
+					.build();
+					response.add(r);
+				});
+				res.setResponse(response);
+				res.setMessage("SUCCESS");
+			}else {
+				res.setResponse(response);
+				res.setMessage("FAILED");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
 	}
 }

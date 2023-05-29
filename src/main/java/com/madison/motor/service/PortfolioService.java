@@ -1,6 +1,10 @@
 package com.madison.motor.service;
 
+import java.text.ParseException;
+
 import com.madison.motor.request.GetPortFolioReq;
+import com.madison.motor.request.GetReferalByQuoteReq;
+import com.madison.motor.request.GetReferalEntryDateReq;
 import com.madison.motor.request.ModifyRateReq;
 import com.madison.motor.request.PortfolioSearchReq;
 import com.madison.motor.request.ReferalQuoteReq;
@@ -27,5 +31,9 @@ public interface PortfolioService {
 	MadisonCommonRes modifyRate(ModifyRateReq req);
 
 	MadisonCommonRes editModifyRate(String applicationNo, String vehicleId);
+
+	MadisonCommonRes GetReferalEntryDate(GetReferalEntryDateReq req) throws ParseException;
+
+	MadisonCommonRes GetReferalByQuote(GetReferalByQuoteReq req);
 
 }

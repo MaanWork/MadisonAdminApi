@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.madison.motor.entity.BranchMaster;
@@ -37,4 +38,8 @@ public interface BranchMasterRepository  extends JpaRepository<BranchMaster,Bran
 
 
 	List<BranchMaster> findByStatusOrderByBranchNameAsc(String status);
+
+
+	@Query(value="select category_detail_id from constant_detail where category_id=40 and status='Y' and branch_code=?1 and detail_name =?2",nativeQuery=true)
+	String getuserIdByName(String branchCode,String detailName);
 }

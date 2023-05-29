@@ -27,5 +27,7 @@ public class BrokerDetailsRes {
 	private String loginId;
 	@JsonProperty("CompanyName")
 	private String companyName;
+	@JsonProperty("CreatedDate")
+	private String createdDate;
 
 }

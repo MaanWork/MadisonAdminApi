@@ -21,53 +21,56 @@ public class MadisonAdminValidation {
 	   private static final String MOBILE_NO="0[1-9]{9}";
 	   private static final String EMAIL="[a-zA-Z]+[0-9]*@[a-zA-Z]+[.][a-zA-Z]+";
 	   private static final String PASSWORD ="[a-zA-Z0-9@#!$%^&*+]{7}";
-	   private static final String DATE_VAL="[0-9]{2}/[0-9]{2}/[0-9]{4}";
+	  // private static final String DATE_VAL="[0-9]{2}/[0-9]{2}/[0-9]{4}";
 	   
 	public List<ErrorList> validateUser(UserSaveReq req){
 		ArrayList<ErrorList> list =new ArrayList<ErrorList>();
 		try {
-			if(StringUtils.isEmpty(req.getBrokerCode())) {
-				list.add(new ErrorList("1","Broker","Please choose broker"));
-			}if(StringUtils.isBlank(req.getUserType())) {
-				list.add(new ErrorList("1","UserType","Please choose usertype"));
-			}if(StringUtils.isBlank(req.getTitle())) {
-				list.add(new ErrorList("1","Title","Please choose title"));
-			}if(StringUtils.isBlank(req.getFirstName())) {
-				list.add(new ErrorList("1","FirstName","Please enter firstname"));
-			}if(StringUtils.isBlank(req.getNationality())) {
-				list.add(new ErrorList("1","Nationality","Please choose nationality"));
-
-			}if(StringUtils.isBlank(req.getCityId())) {
-				list.add(new ErrorList("1","City","Please choose city"));
-
-			}if(StringUtils.isBlank(req.getCountryId())) {
-				list.add(new ErrorList("1","Country","Please choose country"));
-
-			}if(StringUtils.isBlank(req.getPoBox())) {
-				list.add(new ErrorList("1","PoBox","Please enter pobox"));
-			}if(StringUtils.isBlank(req.getMobileNo())) {
-				list.add(new ErrorList("1","MobileNo","Please enter mobilenumber"));
-			}else if(regexVal(req.getMobileNo(),MOBILE_NO)) {
-				list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
-
-			}if(StringUtils.isBlank(req.getEmailId())) {
-				list.add(new ErrorList("1","EmailId","Please enter email"));
-			}else if(regexVal(req.getEmailId(), EMAIL)) {
-				list.add(new ErrorList("1","EmailId","Please enter valid email"));
-			}if(StringUtils.isBlank(req.getAttachedBranch())) {
-				list.add(new ErrorList("1","AttachedBranch","Please choose attached branch"));
-			}if(StringUtils.isBlank(req.getLoginId())) {
-				list.add(new ErrorList("1","EmailId","Please enter loginId"));
-			}if(StringUtils.isBlank(req.getPassword())) {
-				list.add(new ErrorList("1","Password","Please enter password"));
-			}if(StringUtils.isBlank(req.getConfirmPassword())) {
-				list.add(new ErrorList("1","ConfirmPassword","Please enter confirm password"));
-
-			}if(StringUtils.isNotBlank(req.getPassword()) && StringUtils.isNotBlank(req.getConfirmPassword())){
-				if(!req.getPassword().equalsIgnoreCase(req.getConfirmPassword())) {
-					list.add(new ErrorList("1","Password","Password does not matched"));
+				if(StringUtils.isEmpty(req.getBrokerCode())) {
+					list.add(new ErrorList("1","Broker","Please choose broker"));
+				}if(StringUtils.isBlank(req.getUserType())) {
+					list.add(new ErrorList("1","UserType","Please choose usertype"));
+				}if(StringUtils.isBlank(req.getTitle())) {
+					list.add(new ErrorList("1","Title","Please choose title"));
+				}if(StringUtils.isBlank(req.getFirstName())) {
+					list.add(new ErrorList("1","FirstName","Please enter firstname"));
+				}if(StringUtils.isBlank(req.getNationality())) {
+					list.add(new ErrorList("1","Nationality","Please choose nationality"));
+	
+				}if(StringUtils.isBlank(req.getCityId())) {
+					list.add(new ErrorList("1","City","Please choose city"));
+	
+				}if(StringUtils.isBlank(req.getCountryId())) {
+					list.add(new ErrorList("1","Country","Please choose country"));
+	
+				}if(StringUtils.isBlank(req.getPoBox())) {
+					list.add(new ErrorList("1","PoBox","Please enter pobox"));
+				}if(StringUtils.isBlank(req.getMobileNo())) {
+					list.add(new ErrorList("1","MobileNo","Please enter mobilenumber"));
+				}else if(regexVal(req.getMobileNo(),MOBILE_NO)) {
+					//list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
+	
+				}if(StringUtils.isBlank(req.getEmailId())) {
+					list.add(new ErrorList("1","EmailId","Please enter email"));
+				}else if(regexVal(req.getEmailId(), EMAIL)) {
+					list.add(new ErrorList("1","EmailId","Please enter valid email"));
+				}if(StringUtils.isBlank(req.getAttachedBranch())) {
+					list.add(new ErrorList("1","AttachedBranch","Please choose attached branch"));
+				}if(StringUtils.isBlank(req.getLoginId())) {
+					list.add(new ErrorList("1","EmailId","Please enter loginId"));
 				}
-			}
+				if("new".equalsIgnoreCase(req.getMode())) {
+					if(StringUtils.isBlank(req.getPassword())) {
+						list.add(new ErrorList("1","Password","Please enter password"));
+					}if(StringUtils.isBlank(req.getConfirmPassword())) {
+						list.add(new ErrorList("1","ConfirmPassword","Please enter confirm password"));
+		
+					}if(StringUtils.isNotBlank(req.getPassword()) && StringUtils.isNotBlank(req.getConfirmPassword())){
+						if(!req.getPassword().equalsIgnoreCase(req.getConfirmPassword())) {
+							list.add(new ErrorList("1","Password","Password does not matched"));
+						}
+					}
+				}
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -118,7 +121,7 @@ public class MadisonAdminValidation {
 				list.add(new ErrorList("101","MobileNo","Please enter mobileno"));
 
 			}else if(regexVal(req.getMobileNo(),MOBILE_NO)) {
-				list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
+				//list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
 
 			}
 			
@@ -169,13 +172,14 @@ public class MadisonAdminValidation {
 				list.add(new ErrorList("101","BackDateAllowed","BackDateAllowed should not be allowed character & special character"));
 			}if(StringUtils.isBlank(req.getEffectiveDate())) {
 				list.add(new ErrorList("101","EffectiveDate","Please enter effectivedate"));
-			}else if(regexVal(req.getEffectiveDate(), DATE_VAL)) {
-				list.add(new ErrorList("101","EffectiveDate","EffectiveDate format should be like this :DD/MM/YYYY"));
-			}if(StringUtils.isBlank(req.getEndDate())) {
-				list.add(new ErrorList("101","EndDate","Please enter enddate"));
-			}else if(regexVal(req.getEndDate(), DATE_VAL)) {
-				list.add(new ErrorList("101","EndDate","EndDate format should be like this :DD/MM/YYYY"));
 			}
+//			}else if(regexVal(req.getEffectiveDate(), DATE_VAL)) {
+//				list.add(new ErrorList("101","EffectiveDate","EffectiveDate format should be like this :DD/MM/YYYY"));
+//			}if(StringUtils.isBlank(req.getEndDate())) {
+//				list.add(new ErrorList("101","EndDate","Please enter enddate"));
+//			}else if(regexVal(req.getEndDate(), DATE_VAL)) {
+//				list.add(new ErrorList("101","EndDate","EndDate format should be like this :DD/MM/YYYY"));
+//			}
 			
 			if(CollectionUtils.isEmpty(req.getPolicyType())) {
 				list.add(new ErrorList("101","PolicyType","Please enter policytype details"));
@@ -184,16 +188,16 @@ public class MadisonAdminValidation {
 				
 				for (int i=0;i<req.getPolicyType().size();i++) {
 					PolicyTypeReq p =req.getPolicyType().get(i);
-					if(StringUtils.isBlank(p.getMinSiValue())) {
+					if(StringUtils.isBlank(p.getMinSiValue()) && !"3".equalsIgnoreCase(p.getPolicyTypeId())) {
 						list.add(new ErrorList(""+i+"","MinSiValue","Please enter MinSiValue"));
 
-					}else if (!NumberUtils.isParsable(p.getMinSiValue())) {
+					}else if (!NumberUtils.isParsable(p.getMinSiValue()) && !"3".equalsIgnoreCase(p.getPolicyTypeId())) {
 						list.add(new ErrorList(""+i+"","MinSiValue","MinSiValue should not be allowed character & special character"));
 					}
-					if(StringUtils.isBlank(p.getMaxSiValue())) {
+					if(StringUtils.isBlank(p.getMaxSiValue()) && !"3".equalsIgnoreCase(p.getPolicyTypeId())) {
 						list.add(new ErrorList(""+i+"","MaxSiValue","Please enter MaxSiValue"));
 
-					}else if (!NumberUtils.isParsable(p.getMaxSiValue())) {
+					}else if (!NumberUtils.isParsable(p.getMaxSiValue()) && !"3".equalsIgnoreCase(p.getPolicyTypeId())) {
 						list.add(new ErrorList(""+i+"","MaxSiValue","MaxSiValue should not be allowed character & special character"));
 					}
 					
@@ -203,7 +207,7 @@ public class MadisonAdminValidation {
 						Double minSiValue =Double.valueOf(p.getMinSiValue());
 						Double maxSiValue =Double.valueOf(p.getMaxSiValue());
 						
-						if(minSiValue>=maxSiValue) {
+						if(minSiValue>=maxSiValue && !"Third Party Only".equalsIgnoreCase(req.getPolicyType().get(i).getPolicyTypeId())) {
 							list.add(new ErrorList(""+i+"","PolicyType","MinSiValue ("+minSiValue+") should not greater than or equal to MaxSiValue ("+maxSiValue+") "));
 
 						}

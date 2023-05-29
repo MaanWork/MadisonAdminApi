@@ -48,7 +48,8 @@ public class EditAdminDetailRes {
 	private String lastName;
 	@JsonProperty("MiddleName")
 	private String middleName;
-	
+	@JsonProperty("UsertypeId")
+	private String usertypeId;
 	
 	
 	

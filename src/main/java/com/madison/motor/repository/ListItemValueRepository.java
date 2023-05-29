@@ -15,6 +15,7 @@ package com.madison.motor.repository;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.Tuple;
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -56,6 +57,12 @@ public interface ListItemValueRepository  extends JpaRepository<ListItemValue,Li
 	@Transactional
 	@Query(value="INSERT INTO MOTOR_CLAUSES_INFO (SNO,QUOTE_NO,CON_TYPE,CON_TYPE_DESC,CODE,CODE_DESC,ENTRY_DATE,STATUS,REMARKS,COREAPPCODE) VALUES ((SELECT NVL(MAX(SNO )+1,1) FROM MOTOR_CLAUSES_INFO),?1,?2,?3,(SELECT NVL(MAX(CODE )+1,1) FROM MOTOR_CLAUSES_INFO WHERE CON_TYPE=?4 AND QUOTE_NO=?5),?6,SYSDATE,?7,?8,?9)",nativeQuery=true)
 	int insertCondition(String quoteNo, String string2, String string3, String string4, String string5, String string6, String string7, String string8, String string9);
+
+	@Query(value="SELECT BRANCH_CODE,BRANCH_NAME FROM BRANCH_MASTER WHERE BRANCH_CODE IN( SELECT DISTINCT(REGEXP_SUBSTR(LC_LOGIN,'[^,]+',1,LEVEL)) LC_LOGIN FROM ( SELECT ATTACHED_BRANCH LC_LOGIN FROM LOGIN_MASTER WHERE AGENCY_CODE=?1) B CONNECT BY LEVEL <= LENGTH(LC_LOGIN) - LENGTH(REPLACE(LC_LOGIN,',',''))+ 1 AND LC_LOGIN IS NOT NULL) AND STATUS='Y'",nativeQuery=true)
+	List<Tuple> getbranchListByAgencyCode(String agencyCode);
+
+	@Query(value = "select category_detail_id as Code,Upper(detail_name) as Description from constant_detail where category_id=40 and status='Y' and branch_code=?1 and remarks=?2 order by category_detail_id asc",nativeQuery=true)
+	List<Tuple> getAdminUsertype(String branchCode, Object object);
 	
 
 }

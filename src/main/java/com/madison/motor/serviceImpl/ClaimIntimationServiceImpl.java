@@ -42,6 +42,10 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 
 	SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 	
+	public String DateFormate(Object input) {
+		return new SimpleDateFormat("dd/MM/yyyy").format(input).toString(); 
+	}
+	
 	@Override
 	public MadisonCommonRes ClaimIntimationList(String status) {
 		MadisonCommonRes res = new MadisonCommonRes();
@@ -56,9 +60,9 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 					.phoneNo(p.get("phoneno")==null?"":p.get("phoneno").toString())
 					.policyNumber(p.get("policynumber")==null?"":p.get("policynumber").toString())
 					.vehicleRegNo(p.get("vehicleRefno")==null?"":p.get("vehicleRefno").toString())
-					.dateofAccident(p.get("dateofaccident")==null?"":p.get("dateofaccident").toString())
+					.dateofAccident(p.get("dateofaccident")==null?"":DateFormate(p.get("dateofaccident")).toString())
 					.status(p.get("status")==null?"":p.get("status").toString())
-					.entryDate(p.get("entrydate")==null?"":p.get("entrydate").toString())
+					.entryDate(p.get("entrydate")==null?"":DateFormate(p.get("entrydate")).toString())
 					.remarks(p.get("remarks")==null?"":p.get("remarks").toString())
 					.claimId(p.get("claimid")==null?"":p.get("claimid").toString())
 					.claimRef(p.get("claimref")==null?"":p.get("claimref").toString())
@@ -92,9 +96,9 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 							.phoneNo(p.get("phoneno")==null?"":p.get("phoneno").toString())
 							.policyNumber(p.get("policynumber")==null?"":p.get("policynumber").toString())
 							.vehicleRegNo(p.get("vehicleRefno")==null?"":p.get("vehicleRefno").toString())
-							.dateofAccident(p.get("dateofaccident")==null?"":p.get("dateofaccident").toString())
+							.dateofAccident(p.get("dateofaccident")==null?"":DateFormate(p.get("dateofaccident")).toString())
 							.status(p.get("status")==null?"":p.get("status").toString())
-							.entryDate(p.get("entrydate")==null?"":p.get("entrydate").toString())
+							.entryDate(p.get("entrydate")==null?"":DateFormate(p.get("entrydate")).toString())
 							.remarks(p.get("remarks")==null?"":p.get("remarks").toString())
 							.claimId(p.get("claimid")==null?"":p.get("claimid").toString())
 							.claimRef(p.get("claimref")==null?"":p.get("claimref").toString())
@@ -117,11 +121,15 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 	@Override
 	public MadisonCommonRes InsertClaimIntimation(InsertClaimIntimationReq req) {
 		MadisonCommonRes res = new MadisonCommonRes();
-		Long ClaimRefSeq = null;
+		Long ClaimRefSeq = null;Long ClaimId=null;
+		Long existclaimid = null;
 		try {
 			if(StringUtils.isBlank(req.getClaimRef()))
 				ClaimRefSeq = query.getClaimRefSeq();
-				Long ClaimId = query.getClaimIdSum();
+			if(StringUtils.isBlank(req.getClaimId())) {
+				existclaimid = query.getexistclaimId(req.getClaimRef());
+				ClaimId = query.getClaimIdSum();
+			}
 				MotorClaimIntimationDtl insertClaim = MotorClaimIntimationDtl.builder()
 					.name(StringUtils.isBlank(req.getName())?"":req.getName())
 					.nrcPassportNo(StringUtils.isBlank(req.getNrcPassportNo())?"":req.getNrcPassportNo())
@@ -130,7 +138,7 @@ Logger log =LogManager.getLogger(ClaimIntimationServiceImpl.class);
 					.vehicleRefno(StringUtils.isBlank(req.getVehicleRegNo())?"":req.getVehicleRegNo())
 					.dateofaccident(StringUtils.isBlank(req.getDateofAccident())?null:sdf.parse(req.getDateofAccident()))
 					.entrydate(new Date())
-					.claimid(StringUtils.isBlank(req.getClaimId())? ClaimId : Long.valueOf(req.getClaimId()))
+					.claimid(StringUtils.isBlank(req.getClaimId())? existclaimid==null ? ClaimId:existclaimid : Long.valueOf(req.getClaimId()))
 					.status(StringUtils.isBlank(req.getStatus())? "P" : req.getStatus())
 					.claimref(StringUtils.isBlank(req.getClaimRef())?ClaimRefSeq:Long.valueOf(req.getClaimRef()))
 					.remarks(req.getRemarks())

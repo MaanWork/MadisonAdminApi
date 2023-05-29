@@ -2,6 +2,7 @@ package com.madison.motor.utilityImpl;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -9,11 +10,9 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
@@ -49,20 +48,27 @@ import com.madison.motor.entity.InstallmentDetails;
 import com.madison.motor.entity.ListItemValue;
 import com.madison.motor.entity.LoginMaster;
 import com.madison.motor.entity.LoginUserDetails;
+import com.madison.motor.entity.MenuMaster;
 import com.madison.motor.entity.MotorClaimIntimationDtl;
 import com.madison.motor.entity.MotorDataDetail;
 import com.madison.motor.entity.MotorGroupMaster;
 import com.madison.motor.entity.MotorPolicyCoverData;
 import com.madison.motor.entity.MotorPolicyDetails;
 import com.madison.motor.entity.MotorPolicytypeMaster;
+import com.madison.motor.entity.OpenCoverMaster;
+import com.madison.motor.entity.OpenCoverPositionMaster;
 import com.madison.motor.entity.PaymentDetail;
 import com.madison.motor.entity.PersonalInfo;
 import com.madison.motor.entity.ProductMaster;
 import com.madison.motor.entity.RoadSideAssistantDetails;
 import com.madison.motor.request.GetEmiReportReq;
+import com.madison.motor.request.GetOpenCoverListReq;
 import com.madison.motor.request.GetOrEditProductReq;
 import com.madison.motor.request.GetPortFolioReq;
 import com.madison.motor.request.GetProductReq;
+import com.madison.motor.request.GetReferalByQuoteReq;
+import com.madison.motor.request.GetReferalEntryDateReq;
+import com.madison.motor.request.GetReferralProductReq;
 import com.madison.motor.request.GetUserDetailsReq;
 import com.madison.motor.request.ModifyRateDetReq;
 import com.madison.motor.request.PortfolioSearchReq;
@@ -71,7 +77,9 @@ import com.madison.motor.request.ReferalQuoteReq;
 import com.madison.motor.request.ReferalSearchQuoteReq;
 import com.madison.motor.request.RejectEditReq;
 import com.madison.motor.request.RoadAssistantListReq;
+import com.madison.motor.request.UpdatePasswordReq;
 import com.madison.motor.request.UpdateQuotePremiumReq;
+import com.madison.motor.request.getExcludedMenuReq;
 
 @Component
 public class CriteriaQueryImpl {
@@ -486,6 +494,7 @@ public class CriteriaQueryImpl {
 			updateQuery.set(hpm.get("commission"), new BigDecimal(commision_fee.toString()));
 			updateQuery.set(hpm.get("adminRemarks"), req.getRemarks());
 			updateQuery.set(hpm.get("adminReferralStatus"), "N");
+			updateQuery.set(hpm.get("installmentYn"),StringUtils.isBlank(req.getInstallmentYN())?"N":req.getInstallmentYN());
 			
 			java.util.Date effectiveDate = java.util.Date.from(LocalDate.now().plusDays(30).atStartOfDay(ZoneId.systemDefault()).toInstant());
 			updateQuery.set(hpm.get("effectiveDate"),effectiveDate);
@@ -876,7 +885,7 @@ public class CriteriaQueryImpl {
 			
 			query.multiselect(cb.coalesce(customerName, pi.get("companyName")).alias("customerName"),
 					lm.get("usertype").alias("usertype"),lm.get("loginId").alias("loginId"),pi.get("applicationId").alias("applicationId"),
-					pi.get("agencyCode").alias("agencyCode"),status.alias("status"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
+					pi.get("agencyCode").alias("agencyCode"),pi.get("oaCode").alias("oaCode"),status.alias("status"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
 					userName.alias("username"),companyName.alias("brokerName"))
 			.where(predicate_array);
 				 
@@ -916,7 +925,7 @@ public class CriteriaQueryImpl {
 			Subquery<String> nation_name =query.subquery(String.class);
 			Root<CountryMaster> cm3 =nation_name.from(CountryMaster.class);
 				nation_name.select(cm3.get("nationalityName")).distinct(true)
-					.where(cb.equal(cm3.get("countryId"), pi.get("country")));
+					.where(cb.equal(cm3.get("countryId"), pi.get("nationality")));
 			
 			query.multiselect(pi.get("title").alias("title"),pi.get("gender").alias("gender"),pi.get("firstName").alias("firstName"),
 					pi.get("lastName").alias("lastName"),pi.get("nationality").alias("nationality"),cb.function("to_char", Date.class, pi.get("dob"),cb.literal("DD/MM/YYY")).alias("dob"),
@@ -926,7 +935,7 @@ public class CriteriaQueryImpl {
 					pi.get("status").alias("status"),pi.get("city").alias("city"),lm.get("branchCode").alias("branchCode"),lm.get("loginId").alias("loginId"),lm.get("usertype").alias("usertype"),
 					pi.get("custName").alias("custName"),pi.get("custArNo").alias("custArNo"),pi.get("customerId").alias("customerId"),lm.get("oaCode").alias("oaCode"),
 					lm.get("attachedBranch").alias("attachedBranch"),lm.get("subBranch").alias("subBranch"),lm.get("isB2c").alias("isB2c"),
-					userName.alias("userName"),countryName.alias("countryName"))
+					userName.alias("userName"),countryName.alias("countryName"),nation_name.alias("nationalityName"))
 			
 			.where(cb.equal(pi.get("agencyCode"), agencyCode),cb.equal(pi.get("agencyCode"), lm.get("agencyCode")),
 					cb.equal(pi.get("loginId"), lm.get("loginId")));
@@ -1015,13 +1024,13 @@ public class CriteriaQueryImpl {
 			Subquery<String>branc_name =query.subquery(String.class);
 			Root<BranchMaster> bm =branc_name.from(BranchMaster.class);
 			branc_name.select(bm.get("branchName")).distinct(true).where(cb.equal(bm.get("branchCode"), lm.get("branchCode")));
-			
+					
 			query.multiselect(lm.get("loginId").alias("loginId"),lm.get("username").alias("userName"),lm.get("onlineYn").alias("onlineYn"),
 					lm.get("usertype").alias("usertype"),status.alias("status"),branc_name.alias("branch_name"),lm.get("mobileNo").alias("mobileNo"),
 					lm.get("branchCode").alias("branchCode"),cb.trim(Trimspec.BOTH,lm.get("productId")).alias("productId"),lm.get("menuId").alias("menuId"),
 					lm.get("brokerCodes").alias("brokerCodes"),lm.get("userMail").alias("userMail"),lm.get("attachedUw").alias("attachedUw"),
 					lm.get("attachedBranch").alias("attachedBranch"),lm.get("firstName").alias("firstName"),lm.get("lastName").alias("lastName"),
-					lm.get("middleName").alias("middleName"))
+					lm.get("middleName").alias("middleName"),lm.get("status").alias("statusId"))
 					
 					
 			.where(lm.get("userid").in(Arrays.asList("2","4")),cb.equal(lm.get("branchCode"), branchCode),cb.equal(lm.get("loginId"), loginId));
@@ -1278,7 +1287,7 @@ public class CriteriaQueryImpl {
 			
 			query.multiselect(bcm.get("customerId").alias("customerId"),bcm.get("contactPerson").alias("contactPerson"),
 					pi.get("agencyCode").alias("agencyCode"),bcm.get("rsaBrokerCode").alias("rsaBrokerCode"),status.alias("status"),
-					pi.get("loginId").alias("loginId"),bcm.get("companyName").alias("companyName"))
+					pi.get("loginId").alias("loginId"),bcm.get("companyName").alias("companyName"),pi.get("entryDate").alias("entryDate"))
 			
 			.where(cb.equal(bcm.get("agencyCode"), pi.get("agencyCode")),bcm.get("branchCode").in(branchCode),
 					cb.equal(pi.get("applicationId"), appId),pi.get("loginId").in(loginId))
@@ -1312,18 +1321,29 @@ public class CriteriaQueryImpl {
 			Expression<Object> country =cb.selectCase(pi.get("country"))
 					.when("N", countryName).otherwise(pi.get("country"));
 			
+			Subquery<String> nationalityname = query.subquery(String.class);
+			Root<CountryMaster> nm = nationalityname.from(CountryMaster.class);
+			
+			nationalityname.select(nm.get("nationalityName")).where(cb.equal(nm.get("countryId"), pi.get("nationality")));
+			
+			Subquery<String> branchName = query.subquery(String.class);
+			Root<BranchMaster> bn = branchName.from(BranchMaster.class);
+			
+			branchName.select(bn.get("branchName")).where(cb.in(bn.get("branchCode")).value(branchCode));
+			
 			query.multiselect(pi.get("title").alias("title"),pi.get("gender").alias("gender"),pi.get("firstName").alias("firstName"),
 					pi.get("lastName").alias("lastName"),pi.get("nationality").alias("nationality"),pi.get("telephone").alias("telephone"),
 					pi.get("fax").alias("fax"),pi.get("email").alias("email"),pi.get("mobile").alias("mobile"),pi.get("address1").alias("address1"),
 					pi.get("address2").alias("address2"),pi.get("occupation").alias("occupation"),pi.get("emirate").alias("emirate"),
 					pi.get("country").alias("country"),pi.get("pobox").alias("pobox"),bcm.get("companyName").alias("companyName"),
 					bcm.get("agencyCode").alias("agencyCode"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
-					bcm.get("status").alias("status"),bcm.get("address3").alias("address3"),bcm.get("city").alias("city"),bcm.get("branchCode").alias("branchCode"),
-					bcm.get("missippiId").alias("missippiId"),bcm.alias("approvedPreparedBy").alias("approvedPreparedBy"),bcm.get("rsaBrokerCode").alias("rsaBrokerCode"),
+					lm.get("status").alias("status"),bcm.get("address3").alias("address3"),bcm.get("city").alias("city"),bcm.get("branchCode").alias("branchCode"),
+					bcm.get("missippiId").alias("missippiId"),bcm.get("approvedPreparedBy").alias("approvedPreparedBy"),bcm.get("rsaBrokerCode").alias("rsaBrokerCode"),
 					lm.get("loginId").alias("loginId"),bcm.get("acExecutiveId").alias("acExecutiveId"),pi.get("custName").alias("custName"),pi.get("custArNo").alias("custArNo"),
 					bcm.get("customerId").alias("customerId"),bcm.get("issuerCommissionOpencover").alias("issuerCommissionOpencover"),bcm.get("issuerCommissionOneoff")
 					.alias("issuerCommissionOneoff"),bcm.get("imagePath").alias("imagePath"),lm.get("attachedBranch").alias("attachedBranch"),lm.get("subBranch").alias("subBranch"),
-					bcm.get("brokerType").alias("brokerType"),country.alias("countryName"),cb.function("to_char", Date.class, pi.get("dob"),cb.literal("DD/MM/YYYY")).alias("dob"))
+					bcm.get("brokerType").alias("brokerType"),country.alias("countryName"),cb.function("to_char", Date.class, pi.get("dob"),cb.literal("DD/MM/YYYY")).alias("dob"),
+					nationalityname.alias("nationalityname"),branchName.alias("branchName"),pi.get("customerId").alias("CustId"),lm.get("userid").alias("userid"))
 										
 					
 			.where(cb.equal(lm.get("agencyCode"), bcm.get("agencyCode")),cb.equal(pi.get("agencyCode"),lm.get("agencyCode")),
@@ -1377,7 +1397,7 @@ public class CriteriaQueryImpl {
 			CriteriaBuilder cb =em.getCriteriaBuilder();
 			CriteriaQuery<Long> query =cb.createQuery(Long.class);
 			Root<LoginUserDetails> lud =query.from(LoginUserDetails.class);
-			query.select(cb.count(lud)).where(cb.equal(lud.get(productId), productId),cb.equal(lud.get("agencyCode"), agencyCode));
+			query.select(cb.count(lud)).where(cb.equal(lud.get("productId"), productId),cb.equal(lud.get("agencyCode"), agencyCode));
 			count =em.createQuery(query).getSingleResult();
 		}catch (Exception e) {
 			e.printStackTrace();
@@ -1400,7 +1420,7 @@ public class CriteriaQueryImpl {
 				op_cover = p.getOpenCoverNo();
 			
 			//query.set(lud.get("commision"), "");
-			query.set(lud.get("insuranceEndLimit"), p.getSumInsured());
+			query.set(lud.get("insuranceEndLimit"), StringUtils.isBlank(p.getSumInsured())?null:new BigDecimal(p.getSumInsured()));
 			query.set(lud.get("status"), "Y");
 			//query.set(lud.get("discountOfPremium"), "");
 			//query.set(lud.get("minPremiumAmount"), "");
@@ -1411,7 +1431,7 @@ public class CriteriaQueryImpl {
 			query.set(lud.get("provisionForPremium"), "");
 			//query.set(lud.get("receiptStatus"), "");
 			query.set(lud.get("openCoverNo"), op_cover);
-			query.set(lud.get("specialDiscount"), p.getSpecialDiscount());
+			query.set(lud.get("specialDiscount"), StringUtils.isBlank(p.getSpecialDiscount())? null:new BigDecimal(p.getSpecialDiscount()));
 			query.set(lud.get("loginId"), lm.getLoginId());
 			query.set(lud.get("issuertype"), issue_type);
 			query.set(lud.get("isB2c"), lm.getIsB2c());
@@ -1511,7 +1531,7 @@ public class CriteriaQueryImpl {
 						cb.equal(lud.get("agencyCode"),req.getAgencyCode()),cb.equal(lud.get("productId"), req.getProductId()),cb.equal(lud.get("agencyCode"), bcm.get("agencyCode")),
 						cb.equal(lud.get("productId"), bcm.get("productId")),cb.equal(bcm.get("amendId"), amendId))
 						
-				.orderBy(cb.asc(lud.get("productId")));		
+				.orderBy(cb.asc(lud.get("productId"))).orderBy(cb.asc(bcm.get("policytype")));		
 					
 			
 				return em.createQuery(query).getResultList();
@@ -1553,5 +1573,461 @@ public class CriteriaQueryImpl {
 		}
 		return list;
 	}
+
+	public List<Tuple> getcountryByBranchCode(String branchCode) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<CountryMaster> cmRoot = cq.from(CountryMaster.class);
+		
+		Subquery<Integer> amSub = cq.subquery(Integer.class);
+		Root<CountryMaster> amRoot = amSub.from(CountryMaster.class);
+		
+		amSub.select(cb.max(amRoot.get("amendId"))).where(cb.equal(amRoot.get("countryName"), cmRoot.get("countryName")));
+		
+		Subquery<String> ciSub = cq.subquery(String.class);
+		Root<BranchMaster> ciRoot = ciSub.from(BranchMaster.class);
+		
+		ciSub.select(ciRoot.get("originationCountryId")).where(cb.equal(ciRoot.get("branchCode"), branchCode));
+		
+		cq.multiselect(cmRoot.get("countryId").alias("code"),
+				cmRoot.get("countryName").alias("description"))
+		
+		.where(cb.equal(cmRoot.get("amendId"), amSub),
+				cb.equal(cmRoot.get("countryId"), ciSub));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> getstatus() {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ListItemValue> lRoot = cq.from(ListItemValue.class);
+		
+		cq.multiselect(lRoot.get("itemCode").alias("code"),
+				lRoot.get("itemValue").alias("description"))
+		
+		.where(cb.equal(lRoot.get("itemId"), "510"));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	@Transactional
+	public Long getmaxuserId() {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+		Root<LoginUserDetails> lRoot = cq.from(LoginUserDetails.class);
+		
+		cq.multiselect(cb.coalesce(cb.max(cb.sum(lRoot.get("userId"), 1)), 1L).as(Long.class));
+		
+		return em.createQuery(cq).getSingleResult();
+	}
+
+	public List<Tuple> getAdminProduct(String branchCode, String agencyCode) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ProductMaster> pRoot = cq.from(ProductMaster.class);
+		
+		List<Predicate> Predicates = new ArrayList<Predicate>();
+		
+		cq.multiselect(cb.trim(pRoot.get("productId")).alias("Code"),
+				pRoot.get("productName").alias("Description"),
+				pRoot.get("companyId").alias("companyId"));
+		
+		Subquery<String> pbranch = cq.subquery(String.class);
+		Root<BranchMaster> pbRoot = pbranch.from(BranchMaster.class);
+		
+		Subquery<Integer> pAmend = cq.subquery(Integer.class);
+		Root<BranchMaster> paRoot = pAmend.from(BranchMaster.class);
+		
+		pAmend.select(cb.max(paRoot.get("amendId")))
+		.where(cb.equal(paRoot.get("branchCode"), pbRoot.get("branchCode")),
+				cb.equal(paRoot.get("status"), pbRoot.get("status")));
+		
+		pbranch.select(pbRoot.get("belongingBranch"))
+		.where(cb.equal(pbRoot.get("branchCode"), branchCode),
+				cb.equal(pbRoot.get("status"), "Y"),
+				cb.equal(pbRoot.get("amendId"), pAmend));	
+		
+		Predicates.add(cb.equal(pRoot.get("status"), "Y"));
+		Predicates.add(cb.equal(pRoot.get("branchCode"), pbranch));
+		
+		Subquery<String> lpro = cq.subquery(String.class);
+		Root<LoginUserDetails> lRoot = lpro.from(LoginUserDetails.class);
+		
+		lpro.select(lRoot.get("productId")).where(cb.equal(lRoot.get("agencyCode"), agencyCode));
+		
+		if(StringUtils.isNotBlank(agencyCode)) {
+			Predicates.add(cb.not(cb.in(pRoot.get("productId")).value(lpro)));
+		}
+		
+		Predicate [] PredicateArray = new Predicate[Predicates.size()];
+		Predicates.toArray(PredicateArray);
+		cq.where(PredicateArray);
+		
+		cq.orderBy(cb.asc(pRoot.get("productId")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> getExcludedproducts(getExcludedMenuReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ProductMaster> pRoot = cq.from(ProductMaster.class);
+		List<BigDecimal> list = new ArrayList<BigDecimal>();
+		
+		if(StringUtils.isNotBlank(req.getSelProducts())) {
+			String selpro [] = req.getSelProducts().split(",");
+			for(int i=0;i<selpro.length;i++) {
+				list.add(new BigDecimal(selpro[i].toString()));
+			}
+		}
+		
+		cq.multiselect(pRoot.get("productId").alias("productId"),
+				pRoot.get("productName").alias("productName"))
+		
+		.where(pRoot.get("productId").in(list));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Map<String,Object>> getMenuByProduct(String productId,String branchCode) {
+		List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<MenuMaster> mRoot = cq.from(MenuMaster.class);
+		
+		Subquery<String> mbran = cq.subquery(String.class);
+		Root<BranchMaster> bRoot = mbran.from(BranchMaster.class);
+		
+		mbran.select(bRoot.get("belongingBranch"))
+		.where(cb.equal(bRoot.get("branchCode"), branchCode));
+		
+		cq.multiselect(mRoot.get("menuid").alias("menuid"),mRoot.get("menuname").alias("menuname"))
+		
+		.where(cb.equal(mRoot.get("status"), "Y"),
+				cb.equal(mRoot.get("branchCode"), mbran),
+				cb.equal(mRoot.get("productid"), productId),
+				cb.equal(mRoot.get("usertype"), "admin"));
+		
+		List<Tuple> result =  em.createQuery(cq).getResultList();
+		
+		result.forEach(k->{
+			Map<String,Object> resultlist = new HashMap<>();
+			resultlist.put("Code", k.get("menuid"));
+			resultlist.put("Description", k.get("menuname"));
+			list.add(resultlist);
+		});	
+		return list;			
+	}
+
+	public String getadminpasswordbyloginId(String loginId) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<String> cq = cb.createQuery(String.class);
+		Root<LoginMaster> lRoot = cq.from(LoginMaster.class);
+		
+		cq.select(lRoot.get("password")).where(cb.equal(lRoot.get("loginId"), loginId));
+		
+		return em.createQuery(cq).getSingleResult();
+	}
+
+	public Long getexistclaimId(String claimRef) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+		Root<MotorClaimIntimationDtl> mRoot = cq.from(MotorClaimIntimationDtl.class);
+		
+		cq.select(mRoot.get("claimid"))
+		.where(cb.equal(mRoot.get("claimref"), claimRef));
+		
+		return em.createQuery(cq).getSingleResult().longValue();
+	}
+
+	public List<Tuple> getCustomerDetails(GetOrEditProductReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<PersonalInfo> pRoot = cq.from(PersonalInfo.class);
+		
+		Expression<String> companyname = cb.concat(cb.concat(pRoot.get("firstName"), ""), pRoot.get("companyName"));
+		
+		Subquery<String> brokername = cq.subquery(String.class);
+		Root<BrokerCompanyMaster> bcmRoot = brokername.from(BrokerCompanyMaster.class);
+		
+		brokername.select(bcmRoot.get("companyName")).where(cb.equal(bcmRoot.get("agencyCode"), pRoot.get("oaCode"))).distinct(true);
+		
+		Expression<String> address = cb.concat("P.O.BOX.", cb.concat(cb.coalesce(pRoot.get("pobox"), ""), 
+				cb.concat(cb.coalesce(pRoot.get("address1"), ""), cb.concat(cb.coalesce(pRoot.get("address2"),""),
+				cb.coalesce(pRoot.get("emirate"), "")))));
+		
+		Expression<String> Raddress = cb.function("REPLACE", String.class, address,
+				cb.literal("select"),cb.literal(""));
+		
+		cq.multiselect(companyname.alias("companyname"),
+				pRoot.get("customerLoginId").alias("customerloginId"),
+				brokername.alias("brokername"),
+				pRoot.get("entryDate").alias("entryDate"),
+				cb.coalesce(pRoot.get("agencyCode"), "0").alias("agencyCode"),
+				cb.coalesce(pRoot.get("fdCode"), "0").alias("fdCode"),
+				pRoot.get("pobox").alias("pobox"),
+				pRoot.get("mobile").alias("mobile"),
+				pRoot.get("emirate").alias("cityname"),
+				pRoot.get("customerId").alias("customerId"),
+				pRoot.get("missippiCustomerCode").alias("missippiCustomerCode"),
+				pRoot.get("title").alias("title"),
+				pRoot.get("address1").alias("address1"),
+				pRoot.get("address2").alias("address2"),
+				pRoot.get("custArNo").alias("custArNo"),
+				Raddress.alias("address"));
+		
+		List<Predicate> Predicates = new ArrayList<Predicate>();
+		
+		Subquery<String> loginid = cq.subquery(String.class);
+		Root<LoginMaster> lmRoot = loginid.from(LoginMaster.class);
+		
+		Expression<String> values = cb.literal("Broker");cb.literal("User");
+		
+		loginid.select(lmRoot.get("loginId")).where(cb.in(lmRoot.get("usertype")).value(values));
+		
+		Predicates.add(cb.equal(pRoot.get("applicationId"),"1"));
+		
+		Subquery<String> Alogin = cq.subquery(String.class);
+		Root<LoginMaster> alog = Alogin.from(LoginMaster.class);
+		
+		Alogin.select(alog.get("loginId")).where(cb.equal(alog.get("agencyCode"), req.getAgencyCode()));
+		
+		if(StringUtils.isBlank(req.getAgencyCode())) {
+			Predicates.add(cb.in(pRoot.get("loginId")).value(loginid));
+		}else {
+			Predicates.add(cb.equal(pRoot.get("loginId"), Alogin));
+		}
+		
+		Predicate predicateArray [] = new Predicate[Predicates.size()];
+		Predicates.toArray(predicateArray);
+		
+		cq.where(predicateArray).orderBy(cb.asc(pRoot.get("firstName")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<Tuple> getOpenCoverList(GetOpenCoverListReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<OpenCoverPositionMaster> aRoot = cq.from(OpenCoverPositionMaster.class);
+		Root<OpenCoverMaster> bRoot = cq.from(OpenCoverMaster.class);
+		Root<PersonalInfo> cRoot = cq.from(PersonalInfo.class);
+		
+		cq.multiselect(aRoot.get("proposalno").alias("proposalno"),
+				cb.coalesce(aRoot.get("opencoverno"), "0").alias("opencoverno"),
+				cb.selectCase().when(cb.equal(aRoot.get("status"), "Y"), "Quote")
+				.when(cb.equal(aRoot.get("status"), "P"), "Policy").alias("status"),
+				bRoot.get("policystartdate").alias("policystartdate"),
+				bRoot.get("policyenddate").alias("policyenddate"),			
+				cb.coalesce(cRoot.get("firstName"), cRoot.get("companyName")).alias("name"),
+				aRoot.get("renewalstatus").alias("renewalstatus"),
+				bRoot.get("missippiopencoverno").alias("missippiopencoverno"));
+		
+		Subquery<Integer> bamend = cq.subquery(Integer.class);
+		Root<OpenCoverMaster> sbaRoot = bamend.from(OpenCoverMaster.class);
+		
+		bamend.select(cb.max(sbaRoot.get("amendId"))).where(cb.equal(sbaRoot.get("proposalno"), aRoot.get("proposalno")));
+		
+		Subquery<String> propcheck = cq.subquery(String.class);
+		Root<OpenCoverMaster> propRoot = propcheck.from(OpenCoverMaster.class);
+		Subquery<String> brokerid = cq.subquery(String.class);
+		Root<LoginUserDetails> brokerRoot = brokerid.from(LoginUserDetails.class);
+		
+		propcheck.select(propRoot.get("proposalno")).where(cb.equal(propRoot.get("brokerId"), brokerid));
+		
+		brokerid.select(brokerRoot.get("loginId")).distinct(true).where(cb.equal(brokerRoot.get("agencyCode"), req.getAgencyCode()));
+		
+		List<Predicate> Predicates = new ArrayList<Predicate>();
+		
+		Predicates.add(cb.equal(aRoot.get("status"), "Y"));
+		Predicates.add(cb.isNull(aRoot.get("originalpolicyno")));
+		Predicates.add(cb.equal(aRoot.get("proposalno"), bRoot.get("proposalno")));		
+		Predicates.add(cb.equal(bRoot.get("amendId"), bamend));
+		Predicates.add(cb.in(aRoot.get("proposalno")).value(propcheck));
+		Predicates.add(cb.equal(cRoot.get("customerId"), bRoot.get("customerId")));
+		Predicates.add(cb.equal(bRoot.get("customerId"), req.getCustomerId()));;
+				
+		if("policy".equalsIgnoreCase(req.getSearchBy())) {
+			Predicates.add(cb.like(cb.lower(bRoot.get("missippiopencoverno")), "%"+req.getSearchValue().toLowerCase()+"%"));
+		}else if("ocover".equalsIgnoreCase(req.getSearchBy())) {
+			Predicates.add(cb.like(cb.lower(aRoot.get("opencoverno")), "%"+req.getSearchValue()+"%"));
+		}
+		
+		Predicate predicateArray [] = new Predicate[Predicates.size()];
+		Predicates.toArray(predicateArray);
+		
+		cq.where(predicateArray).orderBy(cb.desc(aRoot.get("proposalno")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	@Transactional
+	public Integer updatepassword(UpdatePasswordReq req) throws Exception {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaUpdate<LoginMaster> cq = cb.createCriteriaUpdate(LoginMaster.class);
+		Root<LoginMaster> lmRoot = cq.from(LoginMaster.class);
+		Predicate p = null;
+		
+		if("UpdateByLoginId".equalsIgnoreCase(req.getKey())) {
+			p = cb.equal(lmRoot.get("loginId"), req.getLoginId());
+		}else {
+			p = cb.equal(lmRoot.get("agencyCode"), req.getAgencycode());
+		}
+		
+		cq.set(lmRoot.get("password"), CommonService.encrypt(req.getPassword()))
+			.set(lmRoot.get("status"), "Y")
+			.set(lmRoot.get("passdate"), java.util.Date.from(LocalDate.now().minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+			.set(lmRoot.get("pwdCount"), 0).where(p);
+		
+		return em.createQuery(cq).executeUpdate();
+	}
+
+	public List<Tuple> getReferralProduct(GetReferralProductReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<ProductMaster> pRoot = cq.from(ProductMaster.class);
+		
+		if("3".equalsIgnoreCase(req.getProductId()) || "11".equalsIgnoreCase(req.getProductId())) {
+				req.setProductId("3,11");
+		}
 	
+		Subquery<String> subbranch = cq.subquery(String.class);
+		Root<BranchMaster> bRoot = subbranch.from(BranchMaster.class);
+		Subquery<Integer> subamend = cq.subquery(Integer.class);
+		Root<BranchMaster> bmRoot = subamend.from(BranchMaster.class);
+		
+		String [] proId = req.getProductId().split(",");
+		List<BigDecimal> p =new ArrayList<BigDecimal>();
+		for (String s :proId) {
+			p.add(new BigDecimal(s));
+		}
+		
+		subamend.select(cb.max(bmRoot.get("amendId")))
+			.where(cb.equal(bmRoot.get("branchCode"), bRoot.get("branchCode")),
+					cb.equal(bmRoot.get("status"), bRoot.get("status")));
+		
+		subbranch.select(bRoot.get("belongingBranch"))
+		.where(cb.equal(bRoot.get("branchCode"), req.getBranchCode()),
+				cb.equal(bRoot.get("status"), "Y"),
+				cb.equal(bRoot.get("amendId"), subamend));
+		
+		cq.multiselect(cb.trim(pRoot.get("productId")).alias("code"),
+				pRoot.get("productName").alias("description"))
+		
+		.where(cb.equal(pRoot.get("status"), "Y"),
+				cb.equal(pRoot.get("branchCode"), subbranch),
+				cb.in(pRoot.get("productId")).value(p))
+		
+		.orderBy(cb.desc(pRoot.get("productId")));
+		
+		return em.createQuery(cq).getResultList();
+	}
+
+	public String GetReferalEntryDate(GetReferalEntryDateReq req) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Timestamp> cq = cb.createQuery(Timestamp.class);
+		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
+		
+		List<String> branchIn = Arrays.asList("01","02","03","04","05");
+		List<String> remarkIn = Arrays.asList("Referal","Admin");
+		List<String> statusIn = Arrays.asList("Y","E","R");
+		
+		Subquery<String> sublog = cq.subquery(String.class);
+		Root<LoginMaster> lmRoot = sublog.from(LoginMaster.class);
+		Subquery<String> subagen = cq.subquery(String.class);
+		Root<BrokerCompanyMaster> bcmRoot = subagen.from(BrokerCompanyMaster.class);
+		
+		subagen.select(bcmRoot.get("agencyCode")).where(cb.in(bcmRoot.get("branchCode")).value(branchIn));
+		
+		sublog.select(hRoot.get("loginId")).where(cb.in(lmRoot.get("oaCode")).value(subagen));
+		
+		cq.select(hRoot.get("entryDate").as(Timestamp.class))
+			.where(cb.in(hRoot.get("remarks")).value(remarkIn),
+					cb.in(hRoot.get("status")).value(statusIn),
+					cb.equal(hRoot.get("productId"), req.getProductId()),
+					cb.in(hRoot.get("loginId")).value(sublog),
+					cb.in(hRoot.get("branchCode")).value(branchIn),
+					cb.equal(hRoot.get("quoteNo"), req.getQuoteNo()));
+		
+		Timestamp date = em.createQuery(cq).getSingleResult();
+		SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd");
+
+		return dateformat.format(date);
+	}
+
+	public List<Tuple> GetReferalByQuote(GetReferalByQuoteReq req) throws ParseException {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> cq = cb.createQuery(Tuple.class);
+		Root<HomePositionMaster> hRoot = cq.from(HomePositionMaster.class);
+		Root<PersonalInfo> pRoot = cq.from(PersonalInfo.class);
+		Root<BrokerCompanyMaster> bRoot = cq.from(BrokerCompanyMaster.class);
+		
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		java.util.Date date = format.parse(req.getEntryDate());
+		String formateDate = sdf.format(date);
+		
+		List<String> remarksIn = Arrays.asList("Admin","NORMAL_EXCESS_PRICE");
+		List<String> statusIn = Arrays.asList("P","SP");
+		List<String> statusIn1 = Arrays.asList("CCP","SP","UWP");
+		List<String> remarks2 = Arrays.asList("Referal","Admin");
+		List<String> status3 = Arrays.asList("Y","E","R");
+		List<String> branchcodein = Arrays.asList("01","02","03","04","05");
+		
+		Subquery<String> sublogin = cq.subquery(String.class);
+		Root<LoginMaster> slRoot = sublogin.from(LoginMaster.class);
+		Subquery<String> suboacode = cq.subquery(String.class);
+		Root<BrokerCompanyMaster> sbcmRoot = suboacode.from(BrokerCompanyMaster.class);
+		
+		suboacode.select(sbcmRoot.get("agencyCode")).where(cb.in(sbcmRoot.get("branchCode")).value(branchcodein));
+		
+		sublogin.select(slRoot.get("loginId")).where(cb.in(slRoot.get("oaCode")).value(suboacode),
+				cb.in(hRoot.get("branchCode")).value(branchcodein),
+				cb.equal(hRoot.get("quoteNo"), req.getQuoteNo()));
+		
+		Subquery<String> subagency = cq.subquery(String.class);
+		Root<LoginMaster> saRoot = subagency.from(LoginMaster.class);
+		
+		subagency.select(saRoot.get("oaCode")).where(cb.equal(saRoot.get("loginId"), hRoot.get("loginId")));
+		
+		cq.multiselect(cb.selectCase().when(cb.equal(hRoot.get("applicationId"), "1"), hRoot.get("loginId")).otherwise(hRoot.get("applicationId")).alias("QuoteCreated"),
+			hRoot.get("applicationNo").alias("applicationNo"),
+			hRoot.get("loginId").alias("loginId"),
+			hRoot.get("quoteNo").alias("quoteNo"),
+			hRoot.get("remarks").alias("remarks"),
+			hRoot.get("referralDescription").alias("referralDescription"),
+			hRoot.get("summaryRemarks").alias("summaryRemarks"),
+			hRoot.get("schemeId").alias("schemeId"),
+			hRoot.get("applicationId").alias("applicationId"),
+			cb.selectCase().when(cb.equal(hRoot.get("status"), "E"), "Endt").otherwise("Normal").alias("status"),
+			pRoot.get("customerId").alias("customerId"),
+			cb.coalesce(pRoot.get("firstName"), pRoot.get("companyName")).alias("custname"),
+			bRoot.get("companyName").alias("brokername"),
+			cb.selectCase().when(cb.and(cb.equal(hRoot.get("status"), "Y"), cb.in(hRoot.get("remarks")).value(remarksIn)), "Referral Approved")
+				.when(cb.and(cb.equal(hRoot.get("status"), "Y"),cb.greaterThanOrEqualTo(cb.function("trunc", Date.class, hRoot.get("effectiveDate")),
+						cb.function("trunc", Date.class, cb.currentDate())),cb.isNull(hRoot.get("remarks")),cb.isNull(hRoot.get("adminReferralStatus"))),"Existing Quote")
+				.when(cb.and(cb.equal(hRoot.get("status"), "Y"),cb.lessThan(cb.function("trunc", Date.class, hRoot.get("effectiveDate")), 
+						cb.function("trunc", Date.class, cb.currentDate()))), "Lapsed Quote")
+				.when(cb.equal(hRoot.get("status"), "D"), "Rejected Quote")
+				.when(cb.and(cb.equal(hRoot.get("status"), "Y"), cb.in(hRoot.get("remarks")).value("Referal")), "Referral UnApproved")
+				.when(cb.in(hRoot.get("status")).value("R"), "Referral Rejected")
+				.when(cb.or(cb.and(cb.equal(hRoot.get("paymentMode"), "6"),cb.in(hRoot.get("status")).value(statusIn)),cb.and(cb.notEqual(hRoot.get("paymentMode"), "6"),cb.in(hRoot.get("status")).value("P"))),"Policy")
+				.when(cb.in(hRoot.get("status")).value(statusIn1),"Pending Policy")
+				.when(cb.in(hRoot.get("status")).value("PC"), "Canceled Policy").otherwise(hRoot.get("status")).alias("statusdesc")).distinct(true)
+		
+		.where(cb.equal(pRoot.get("customerId"), hRoot.get("customerId")),
+				cb.equal(bRoot.get("agencyCode"), subagency),
+				cb.equal(cb.function("to_char", Date.class, hRoot.get("entryDate"),cb.literal("DD/MM/YYYY")), cb.parameter(String.class,"inputDate")),
+				cb.equal(hRoot.get("productId"), new BigDecimal(req.getProductId())),
+				cb.in(hRoot.get("remarks")).value(remarks2),
+				cb.in(hRoot.get("status")).value(status3),
+				cb.in(hRoot.get("loginId")).value(sublogin))
+		
+		.orderBy(cb.desc(hRoot.get("quoteNo")));
+		
+		
+		return em.createQuery(cq).setParameter("inputDate", formateDate).getResultList();
+		
+	}
+
 }

@@ -70,6 +70,15 @@ public class EditBrokerRes {
 	private String userName;
 	@JsonProperty("CountryId")
 	private String countryId;
-	
+	@JsonProperty("NationalityName")
+	private String nationalityName;
+	@JsonProperty("BranchName")
+	private String branchName;
+	@JsonProperty("CustomerId")
+	private String customerId;
+	@JsonProperty("ExecutiveId")
+	private String executiveId;
+	@JsonProperty("ApprovedBy")
+	private String approvedBy;
 
 }

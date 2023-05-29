@@ -7,7 +7,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Tuple;
 
@@ -34,19 +36,25 @@ import com.madison.motor.repository.PersonalInfoRepository;
 import com.madison.motor.request.AdminSaveReq;
 import com.madison.motor.request.BrokerProductSaveReq;
 import com.madison.motor.request.BrokerSaveReq;
+import com.madison.motor.request.GetOpenCoverListReq;
 import com.madison.motor.request.GetOrEditProductReq;
 import com.madison.motor.request.GetProductReq;
 import com.madison.motor.request.GetUserDetailsReq;
 import com.madison.motor.request.PolicyTypeReq;
 import com.madison.motor.request.ProductReq;
 import com.madison.motor.request.SaveProductReq;
+import com.madison.motor.request.UpdatePasswordReq;
 import com.madison.motor.request.UserSaveReq;
+import com.madison.motor.request.getExcludedMenuReq;
 import com.madison.motor.response.AdminDetailsRes;
 import com.madison.motor.response.BrokerDetailsRes;
 import com.madison.motor.response.EditAdminDetailRes;
 import com.madison.motor.response.EditBrokerRes;
 import com.madison.motor.response.EditProductRes;
 import com.madison.motor.response.EditUserDetailsRes;
+import com.madison.motor.response.GetCustomerByCustomerIdRes;
+import com.madison.motor.response.GetCustomerDetailsRes;
+import com.madison.motor.response.GetOpenCoverListRes;
 import com.madison.motor.response.GetProductDetailsRes;
 import com.madison.motor.response.MadisonCommonRes;
 import com.madison.motor.response.PolicyTypeRes;
@@ -95,6 +103,10 @@ public class UserCreationServiceImpl implements UserCreationService {
 	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 	
+	public String DateFormat(Object input) {
+		return new SimpleDateFormat("dd/MM/yyyy").format(input).toString();
+	}
+	
 	@Override
 	public MadisonCommonRes getUserDetailsByBranchCode(GetUserDetailsReq req) {
 		MadisonCommonRes response =new MadisonCommonRes();
@@ -113,6 +125,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 							.status(p.get("status")==null?"":p.get("status").toString())
 							.userName(p.get("username")==null?"":p.get("username").toString())
 							.userType(p.get("usertype")==null?"":p.get("usertype").toString())
+							.oaCode(p.get("oaCode")==null?"":p.get("oaCode").toString())
 							.build();
 					userRes.add(userDetailsRes);
 				});
@@ -164,6 +177,9 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.title(user.get("title")==null?"":user.get("title").toString())
 						.userName(user.get("userName")==null?"":user.get("userName").toString())
 						.userType(user.get("usertype")==null?"":user.get("usertype").toString())
+						.customerId(user.get("customerId")==null?"":user.get("customerId").toString())
+						.nationalityName(user.get("nationalityName")==null?"":user.get("nationalityName").toString())
+						.brokerCode(user.get("oaCode")==null?"":user.get("oaCode").toString())
 						.build();
 				
 				response.setMessage("SUCCESS");
@@ -230,10 +246,11 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.mobileNo(admin.get("mobileNo")==null?"":admin.get("mobileNo").toString())
 						.onlineYn(admin.get("onlineYn")==null?"":admin.get("onlineYn").toString())
 						.productId(admin.get("productId")==null?"":admin.get("productId").toString())
-						.status(admin.get("status")==null?"":admin.get("status").toString())
+						.status(admin.get("statusId")==null?"":admin.get("statusId").toString())
 						.UserMail(admin.get("userMail")==null?"":admin.get("userMail").toString())
 						.userName(admin.get("userName")==null?"":admin.get("userName").toString())
 						.userType(admin.get("usertype")==null?"":admin.get("usertype").toString())
+						.usertypeId(branchRepo.getuserIdByName(branchCode,admin.get("usertype").toString()))
 					.build();
 				
 				response.setMessage("SUCCESS");
@@ -265,6 +282,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 							.rsaBrokerCode(d.get("rsaBrokerCode")==null?"":d.get("rsaBrokerCode").toString())
 							.status(d.get("status")==null?"":d.get("status").toString())
 							.companyName(d.get("companyName")==null?"":d.get("companyName").toString())
+							.createdDate(d.get("entryDate")==null?"":DateFormat(d.get("entryDate")).toString())
 							.build();
 					brokerRes.add(brokerDetailsRes);
 				});
@@ -314,8 +332,13 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.subBranch(user.get("subBranch")==null?"":user.get("subBranch").toString())
 						.telePhone(user.get("telephone")==null?"":user.get("telephone").toString())
 						.title(user.get("title")==null?"":user.get("title").toString())
+						.nationalityName(user.get("nationalityname")==null?"":user.get("nationalityname").toString())
+						.branchName(user.get("branchName")==null?"":user.get("branchName").toString())
+						.customerId(user.get("CustId")==null?"":user.get("CustId").toString())
 						//.userName(user.get("userName")==null?"":user.get("userName").toString())
-					//	.userType(user.get("usertype")==null?"":user.get("usertype").toString())
+						.userType(user.get("userid")==null?"":user.get("userid").toString())
+						.executiveId(user.get("acExecutiveId")==null?"":user.get("acExecutiveId").toString())
+						.approvedBy(user.get("approvedPreparedBy")==null?"":user.get("approvedPreparedBy").toString())
 						.build();
 				
 				response.setMessage("SUCCESS");
@@ -381,7 +404,12 @@ public class UserCreationServiceImpl implements UserCreationService {
 		try {
 			List<ErrorList> error =validation.validateUser(req);
 			if(CollectionUtils.isEmpty(error)) {
-				String agencyCode =personalRepo.getAgencyCode(req.getBranchCode());
+				String agencyCode="";
+				String customerId ="";
+				if(StringUtils.isBlank(req.getAgencyCode())) {
+					agencyCode =personalRepo.getAgencyCode(req.getBranchCode());
+					personalRepo.updateAgencyCode(Long.valueOf(agencyCode)+1,req.getBranchCode());
+				}
 				PersonalInfo personalInfo =PersonalInfo.builder()
 						.customerId(StringUtils.isBlank(req.getCustomerId())?personalRepo.getCustomerId():Long.valueOf(req.getCustomerId()))
 						.applicationId(StringUtils.isBlank(req.getApplicationId())?"2":req.getApplicationId())
@@ -411,9 +439,11 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.oaCode(StringUtils.isBlank(req.getOaCode())?req.getBrokerCode():req.getOaCode())
 						.build();
 				PersonalInfo pi =personalRepo.save(personalInfo);
-			
-				personalRepo.updateAgencyCode(Long.valueOf(agencyCode)+1, req.getBranchCode());
-				
+						
+				String password="";
+				if(StringUtils.isBlank(req.getPassword())) {
+					password = loginMasterRepo.getPasswordByLoginId(req.getLoginId());
+				}
 				LocalDate localDate =LocalDate.now().plusDays(45);
 				Date pass_date =Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
 				LoginMaster loginMaster =LoginMaster.builder()
@@ -422,7 +452,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.loginId(pi.getLoginId())
 						.usertype(req.getUserType())
 						.username(pi.getFirstName())
-						.password(CommonService.encrypt(req.getPassword()))
+						.password(StringUtils.isBlank(req.getPassword())?password:CommonService.encrypt(req.getPassword()))
 						.userid(new BigDecimal(1))
 						.accesstype("BOTH")
 						.rights("")
@@ -487,7 +517,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 							.agencyCode(pi.getAgencyCode())
 							.oaCode(pi.getOaCode())
 							.companyId("1")
-							.insuranceEndLimit(new BigDecimal(p.getSumInsured()))
+							.insuranceEndLimit(StringUtils.isBlank(p.getSumInsured())?null:new BigDecimal(p.getSumInsured()))
 							.relativeUserId(new BigDecimal(0))
 							.amendId(new BigDecimal(1))
 							.inceptionDate(new Date())
@@ -498,7 +528,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 							.payReceiptStatus("N")
 							.receiptStatus("N")
 							.openCoverNo("11".equals(p.getProductId())?p.getOpenCoverNo():"")
-							.specialDiscount(new BigDecimal(p.getSpecialDiscount()))
+							.specialDiscount(StringUtils.isBlank(p.getSpecialDiscount())?null:new BigDecimal(p.getSpecialDiscount()))
 							.schemeId("30".equals(p.getProductId())?new BigDecimal(7):null)
 							.issuertype("Y".equals(lm.getIsB2c())?"90011":"8888")
 							.isB2c(lm.getIsB2c())
@@ -561,7 +591,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 			Date pass_date =Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
 			LoginMaster loginMaster =LoginMaster.builder()
 					.loginId(req.getLoginId())
-					.password(CommonService.encrypt(req.getPassword()))
+					.password(StringUtils.isBlank(req.getPassword())?query.getadminpasswordbyloginId(req.getLoginId()):CommonService.encrypt(req.getPassword()))
 					.usertype("admin")
 					.username(userName)
 					.agencyCode(req.getLoginId())
@@ -606,7 +636,8 @@ public class UserCreationServiceImpl implements UserCreationService {
 	public MadisonCommonRes createBroker(BrokerSaveReq req) {
 		MadisonCommonRes response = new MadisonCommonRes();
 		try {
-			List<ErrorList> list =validation.validateBroker(req);
+			//List<ErrorList> list =validation.validateBroker(req);
+			List<ErrorList> list = new ArrayList<>();
 			if(CollectionUtils.isEmpty(list)) {
 				String brokerCode =StringUtils.isBlank(req.getAgencyCode())?personalRepo.getBrokerCode():req.getAgencyCode();
 				Long customerId=StringUtils.isBlank(req.getCustomerId())?personalRepo.getCustomerId():Long.valueOf(req.getCustomerId());
@@ -642,10 +673,13 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.build();
 				PersonalInfo pi =personalRepo.save(personalInfo);
 			
+			String sourceFileName="";
+			if(req.getFile()!=null) {
 				File sourceFile =req.getFile();
-				String sourceFileName ="G:\\"+sourceFile.getName();
+				sourceFileName ="G:\\"+sourceFile.getName();
 				File destinationFile =new File(sourceFileName);
 				FileUtils.copyFile(sourceFile, destinationFile);
+			}
 				
 				LocalDate localDate =LocalDate.now().plusDays(45);
 				Date pass_date =Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -655,7 +689,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.loginId(req.getLoginId())
 						.usertype("Broker")
 						.username(req.getFirstName())
-						.password(CommonService.encrypt(req.getPassword()))
+						.password(StringUtils.isBlank(req.getPassword())?"":CommonService.encrypt(req.getPassword()))
 						.userid(new BigDecimal(1))
 						.accesstype("BOTH")
 						.rights("")
@@ -665,7 +699,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.passdate(pass_date)
 						.companyId("2")
 						.createdBy("Admin")
-						.status(StringUtils.isBlank(req.getStatus())?"":req.getStatus())
+						.status(StringUtils.isBlank(req.getStatus())?"Y":req.getStatus())
 						.userIdCreation("N")
 						.acExecutiveCreation("N")
 						//.referal("Y")
@@ -678,6 +712,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.attachedBranch(req.getAttachedBranch())
 						.subBranch(req.getSubBranchId())
 						.firstName(sourceFileName)
+						.coreLoginId(StringUtils.isBlank(req.getCoreLoginId())?null:new BigDecimal(req.getCoreLoginId()))
 						.build();
 				loginMasterRepo.save(loginMaster);
 				
@@ -725,10 +760,14 @@ public class UserCreationServiceImpl implements UserCreationService {
 		try {
 			List<ErrorList> error =validation.validateBrokerProduct(req);
 			if(CollectionUtils.isEmpty(error)) {
+				Long useridmax = null;
+				if(StringUtils.isBlank(req.getUserId())) {
+					useridmax = query.getmaxuserId();
+				}
 				LoginMaster lm =loginMasterRepo.findByAgencyCode(req.getAgencyCode());
 				LoginUserDetails userDetails =LoginUserDetails.builder()
 						.agencyCode(req.getAgencyCode())
-						.userId(null)
+						.userId(StringUtils.isBlank(req.getUserId())?BigDecimal.valueOf(useridmax):new BigDecimal(req.getUserId()))
 						.productId(new BigDecimal(req.getProductId()))
 						.userName(lm.getUsername())
 						.loginId(lm.getLoginId())
@@ -741,7 +780,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.amendId(new BigDecimal("1"))
 						.inceptionDate(new Date())
 						.entryDate(new Date())
-						.status(StringUtils.isBlank(req.getStatus())?"":req.getStatus())
+						.status(StringUtils.isBlank(req.getStatus())?"Y":req.getStatus())
 						.minPremiumAmount(new BigDecimal(req.getMinimumPre()))
 						.backDateAllowed(new BigDecimal(req.getBackDateAllowed()))
 						.freightDebitOption("N")
@@ -852,7 +891,155 @@ public class UserCreationServiceImpl implements UserCreationService {
 		}
 		return response;
 	}
+
+	@Override
+	public MadisonCommonRes getExcludedMenu(getExcludedMenuReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
+		try {
+			List<Tuple> list = query.getExcludedproducts(req);
+			if(!CollectionUtils.isEmpty(list) && StringUtils.isNotBlank(req.getSelProducts())){
+				String selpro [] = req.getSelProducts().split(",");
+				for(int i=0;i<selpro.length;i++) {
+					Map<String,Object> resMap = new HashMap<String,Object>();
+					List<Map<String,Object>> reslist = new ArrayList<>();
+					reslist = query.getMenuByProduct(list.get(i).get("productId").toString(),req.getBranchCode());
+					resMap.put("Code",list.get(i).get("productName").toString());
+					resMap.put("Description", reslist);
+					result.add(resMap);
+				}
+				res.setResponse(result);
+				res.setMessage("SUCCESS");
+			}else {
+				res.setResponse(result);
+				res.setMessage("FAILED");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
 	
+	public MadisonCommonRes getCustomerDetails(GetOrEditProductReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<GetCustomerDetailsRes> response = new ArrayList<GetCustomerDetailsRes>();
+		try {
+			List<Tuple> customerlist = query.getCustomerDetails(req);
+			if(!CollectionUtils.isEmpty(customerlist)) {
+				customerlist.forEach(m -> {
+					GetCustomerDetailsRes k = GetCustomerDetailsRes.builder()
+					.companyname(m.get("companyname")==null?"":m.get("companyname").toString())
+					.customerloginId(m.get("customerloginId")==null?"":m.get("customerloginId").toString())
+					.brokername(m.get("brokername")==null?"":m.get("brokername").toString())
+					.entryDate(m.get("entryDate")==null?"":DateFormat(m.get("entryDate")).toString())
+					.agencyCode(m.get("agencyCode")==null?"":m.get("agencyCode").toString())
+					.fdCode(m.get("fdCode")==null?"":m.get("fdCode").toString())
+					.pobox(m.get("pobox")==null?"":m.get("pobox").toString())
+					.mobile(m.get("mobile")==null?"":m.get("mobile").toString())
+					.cityname(m.get("cityname")==null?"":m.get("cityname").toString())
+					.customerId(m.get("customerId")==null?"":m.get("customerId").toString())
+					.missippiCustomerCode(m.get("missippiCustomerCode")==null?"":m.get("missippiCustomerCode").toString())
+					.title(m.get("title")==null?"":m.get("title").toString())
+					.address1(m.get("address1")==null?"":m.get("address1").toString())
+					.address2(m.get("address2")==null?"":m.get("address2").toString())
+					.custArNo(m.get("custArNo")==null?"":m.get("custArNo").toString())
+					.address(m.get("address")==null?"":m.get("address").toString())
+					.build();
+					response.add(k);
+				});
+				res.setResponse(response);
+				res.setMessage("SUCCESS");
+			}else {
+				res.setResponse(response);
+				res.setMessage("FAILED");
+				}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getcustomerdetailsByCustomerId(String customerId) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		GetCustomerByCustomerIdRes response = new GetCustomerByCustomerIdRes();
+		PersonalInfo pi = personalRepo.findByCustomerId(Long.valueOf(customerId));
+		if(pi!=null) {
+			response.setFirstname(pi.getFirstName());
+			response.setLastName(pi.getLastName());
+			response.setGender(pi.getGender());
+			response.setNationality(pi.getNationality());
+			response.setDob(pi.getDob()==null?"":pi.getDob().toString());
+			response.setMobile(pi.getMobile());
+			response.setPhone(pi.getTelephone());
+			response.setFax(pi.getFax());
+			response.setEmail(pi.getEmail());
+			response.setAddress1(pi.getAddress1());
+			response.setAddress2(pi.getAddress2());
+			response.setOccupation(pi.getOccupation());
+			response.setCountry(pi.getCountry());
+			response.setPobox(pi.getPobox());
+			response.setAgencyCode(pi.getAgencyCode());
+			response.setCity(pi.getCity());			
+			res.setResponse(response);
+			res.setMessage("SUCCESS");
+		}else {
+			res.setResponse(response);
+			res.setMessage("FAILED");
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes getOpenCoverList(GetOpenCoverListReq req) {
+		MadisonCommonRes res = new MadisonCommonRes();
+		List<GetOpenCoverListRes> response = new ArrayList<GetOpenCoverListRes>();
+		try {
+			List<Tuple> list = query.getOpenCoverList(req);
+			if(!CollectionUtils.isEmpty(list)) {
+				list.forEach(m -> {
+					GetOpenCoverListRes k = GetOpenCoverListRes.builder()
+					.proposalNo(m.get("proposalno")==null?"":m.get("proposalno").toString())
+					.openCoverNo(m.get("opencoverno")==null?"":m.get("opencoverno").toString())
+					.status(m.get("status")==null?"":m.get("status").toString())
+					.policyStartDate(m.get("policystartdate")==null?"":m.get("policystartdate").toString())
+					.policyEndDate(m.get("policyenddate")==null?"":m.get("policyenddate").toString())
+					.name(m.get("name")==null?"":m.get("name").toString())
+					.renewalstatus(m.get("renewalstatus")==null?"":m.get("renewalstatus").toString())
+					.missippiopencoverno(m.get("missippiopencoverno")==null?"":m.get("missippiopencoverno").toString())
+					.build();
+					response.add(k);
+				});
+				res.setResponse(response);
+				res.setMessage("SUCCESS");
+			}else {
+				res.setResponse(response);
+				res.setMessage("FAILED");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+	@Override
+	public MadisonCommonRes updatepassword(UpdatePasswordReq req) throws Exception {
+		MadisonCommonRes res = new MadisonCommonRes();
+		int count=0;
+		try {
+			count = query.updatepassword(req);
+			if(count>0) {
+				res.setMessage("SUCCESS");
+				res.setResponse("Password Updated SuccessFully...");
+			}else {
+				res.setMessage("FAILED");
+				res.setResponse("Updated Failed");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
 	
 
 }

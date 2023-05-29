@@ -81,5 +81,7 @@ public class BrokerSaveReq {
 	private String exeutiveBDM;
 	@JsonProperty("File")
 	private File file;;
+	@JsonProperty("CoreLoginId")
+	private String coreLoginId;
 	
 }

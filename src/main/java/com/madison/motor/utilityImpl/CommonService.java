@@ -1,7 +1,11 @@
 package com.madison.motor.utilityImpl;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 import java.util.Properties;
 
 import javax.crypto.Cipher;
@@ -57,13 +61,23 @@ public class CommonService {
 	
 	public static String encrypt(String unencryptedString) throws Exception {
 
-        String encryptedString = null;
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] plainText = unencryptedString.getBytes(FORMAT);
-        byte[] encryptedText = cipher.doFinal(plainText);
-        encryptedString = DatatypeConverter.printBase64Binary(encryptedText);
-        return encryptedString;
-    }
+        MessageDigest md = null;
+			try {
+				md = MessageDigest.getInstance("SHA");
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+			
+			try {
+				md.update(unencryptedString.getBytes("UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			
+        byte password[] = md.digest();
+        String passStr = new String(Base64.getEncoder().encode(password));
+        return passStr;
+	}
 	
 	public static String decrypt(String encryptedString)  throws Exception {
 

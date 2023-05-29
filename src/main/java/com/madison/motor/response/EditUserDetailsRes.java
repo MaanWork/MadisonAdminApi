@@ -69,5 +69,11 @@ public class EditUserDetailsRes {
 	private String userName;
 	@JsonProperty("CountryId")
 	private String countryId;
+	@JsonProperty("CustomerId")
+	private String customerId;
+	@JsonProperty("NationalityName")
+	private String nationalityName;
+	@JsonProperty("BrokerCode")
+	private String brokerCode;
 	
 }

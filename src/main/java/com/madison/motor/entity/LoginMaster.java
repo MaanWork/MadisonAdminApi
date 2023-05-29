@@ -117,7 +117,7 @@ private static final long serialVersionUID = 1L;
     @Column(name="REFERAL", length=25)
     private String     referal ;
 
-    @Column(name="REGION_CODE", nullable=false, length=8)
+    @Column(name="REGION_CODE", length=8)
     private String     regionCode ;
 
     @Column(name="STATE_CODE", length=8)
@@ -159,7 +159,7 @@ private static final long serialVersionUID = 1L;
     @Column(name="FD_CODE", length=25)
     private String     fdCode ;
 
-    @Column(name="CORE_LOGIN_ID", nullable=false)
+    @Column(name="CORE_LOGIN_ID")
     private BigDecimal coreLoginId ;
 
     @Column(name="APP_ID", length=50)

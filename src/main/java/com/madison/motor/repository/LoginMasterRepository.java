@@ -14,6 +14,7 @@ package com.madison.motor.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 import com.madison.motor.entity.BranchMaster;
 import com.madison.motor.entity.LoginMaster;
@@ -33,6 +34,9 @@ public interface LoginMasterRepository  extends JpaRepository<LoginMaster,LoginM
 	LoginMaster findByLoginIdAndAgencyCode(String loginId, String agencyCode);
 
 	LoginMaster findByAgencyCode(String agencyCode);
+
+	@Query(value="SELECT PASSWORD FROM LOGIN_MASTER WHERE LOGIN_ID=?1",nativeQuery=true)
+	String getPasswordByLoginId(String loginId);
 	
 	
 

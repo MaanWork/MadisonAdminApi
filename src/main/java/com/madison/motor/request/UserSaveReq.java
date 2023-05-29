@@ -73,5 +73,7 @@ public class UserSaveReq {
 	private String brokerCode;
 	@JsonProperty("AttachedBranch")
 	private String attachedBranch;
+	@JsonProperty("Mode")
+	private String mode;
 
 }
