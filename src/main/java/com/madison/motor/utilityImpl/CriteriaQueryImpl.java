@@ -105,7 +105,7 @@ public class CriteriaQueryImpl {
 			
 			predicates.add(cb.equal(hpm.get("customerId"), pi.get("customerId")));
 			predicates.add(cb.equal(cb.lower(hpm.get("status")), req.getStatus().toLowerCase()));
-			predicates.add(cb.between(hpm.get("entryDate"), cb.function("to_date", Date.class, cb.parameter(String.class,"startDate")),
+			predicates.add(cb.between(cb.function("to_char",Date.class,hpm.get("entryDate"),cb.literal("DD/MM/YYYY")), cb.function("to_date", Date.class, cb.parameter(String.class,"startDate")),
 					cb.function("to_date", Date.class, cb.parameter(String.class,"endDate"))));
 			
 			Subquery<String> login_id =query.subquery(String.class);
@@ -875,8 +875,8 @@ public class CriteriaQueryImpl {
 			predicates.add(cb.equal(pi.get("applicationId"), "2"));
 			predicates.add(cb.equal(lm.get("branchCode"), req.getBranchCode()));
 		
-			if(StringUtils.isNotBlank(req.getBrokerCode()))
-				predicates.add(cb.equal(lm.get("oaCode"), req.getBrokerCode()));
+			if(StringUtils.isNotBlank(req.getBorganization()))
+				predicates.add(cb.equal(lm.get("oaCode"), req.getAgencyCode()));
 
 			
 			
@@ -886,7 +886,7 @@ public class CriteriaQueryImpl {
 			query.multiselect(cb.coalesce(customerName, pi.get("companyName")).alias("customerName"),
 					lm.get("usertype").alias("usertype"),lm.get("loginId").alias("loginId"),pi.get("applicationId").alias("applicationId"),
 					pi.get("agencyCode").alias("agencyCode"),pi.get("oaCode").alias("oaCode"),status.alias("status"),cb.function("to_char", Date.class, pi.get("entryDate"),cb.literal("DD/MM/YYY")).alias("entryDate"),
-					userName.alias("username"),companyName.alias("brokerName"))
+					userName.alias("username"),companyName.alias("brokerName"),pi.get("customerId").alias("customerId"))
 			.where(predicate_array);
 				 
 			return em.createQuery(query).getResultList();
@@ -898,7 +898,7 @@ public class CriteriaQueryImpl {
 		return null;
 	}
 	
-	public Tuple editUserDetailsByAgencyCode(String agencyCode) {
+	public Tuple editUserDetailsByAgencyCode(String agencyCode,Long customerId) {
 		try {
 			CriteriaBuilder cb=em.getCriteriaBuilder();
 			CriteriaQuery<Tuple> query =cb.createTupleQuery();
@@ -938,7 +938,7 @@ public class CriteriaQueryImpl {
 					userName.alias("userName"),countryName.alias("countryName"),nation_name.alias("nationalityName"))
 			
 			.where(cb.equal(pi.get("agencyCode"), agencyCode),cb.equal(pi.get("agencyCode"), lm.get("agencyCode")),
-					cb.equal(pi.get("loginId"), lm.get("loginId")));
+					cb.equal(pi.get("loginId"), lm.get("loginId")),cb.equal(pi.get("customerId"), customerId));
 					
 			return em.createQuery(query).getSingleResult();				
 					
@@ -2028,6 +2028,23 @@ public class CriteriaQueryImpl {
 		
 		return em.createQuery(cq).setParameter("inputDate", formateDate).getResultList();
 		
+	}
+
+	public String getLoginByLoginId(String loginId) {
+		String result="";
+		try {
+			CriteriaBuilder cb = em.getCriteriaBuilder();
+			CriteriaQuery<String> cq = cb.createQuery(String.class);
+			Root<LoginMaster> lRoot = cq.from(LoginMaster.class);
+			
+			cq.select(lRoot.get("loginId"))
+			.where(cb.equal(lRoot.get("loginId"), loginId));
+			
+			result = em.createQuery(cq).getSingleResult();
+		} catch (Exception e) {
+			log.error("No entity found for query");
+		}
+			return result;
 	}
 
 }

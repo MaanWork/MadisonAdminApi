@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.Tuple;
@@ -181,8 +182,11 @@ public class DropDownServiceImpl implements DropDownService{
 	public MadisonCommonRes insertCondition(List<InsertConditionReq> req) {
 		MadisonCommonRes res = new MadisonCommonRes();
 		try {
+			String Mode = req.stream().map(k -> k.getMode()).filter(k -> k!=null).findFirst().orElse("Mode is Empty");
+			if("delete".equalsIgnoreCase(Mode)) {
+				listItemRepo.deleteConditionList(req.stream().map(m -> m.getQuoteNo()).findFirst().get(),req.stream().map(m -> m.getType()).findFirst().get());
+			}
 			for(InsertConditionReq r :req) {
-				listItemRepo.deleteConditionList(r.getQuoteNo(), r.getCoreAppCode());
 				listItemRepo.insertCondition(r.getQuoteNo(),r.getType(),r.getContype(),r.getType(),r.getQuoteNo(),r.getDescription(),"Y","",r.getCoreAppCode());
 			}
 			res.setMessage("SUCCESS");

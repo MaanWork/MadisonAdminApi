@@ -80,5 +80,7 @@ public class EditBrokerRes {
 	private String executiveId;
 	@JsonProperty("ApprovedBy")
 	private String approvedBy;
+	@JsonProperty("RsaBrokerCode")
+	private String rsaBrokerCode;
 
 }

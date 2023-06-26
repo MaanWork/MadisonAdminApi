@@ -47,8 +47,8 @@ public class MadisonAdminValidation {
 					list.add(new ErrorList("1","PoBox","Please enter pobox"));
 				}if(StringUtils.isBlank(req.getMobileNo())) {
 					list.add(new ErrorList("1","MobileNo","Please enter mobilenumber"));
-				}else if(regexVal(req.getMobileNo(),MOBILE_NO)) {
-					//list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
+				}else if(Pattern.matches(MOBILE_NO, req.getMobileNo())) {
+					list.add(new ErrorList("1","MobileNo","MobileNumber should start with 0 & allowed digits 10"));
 	
 				}if(StringUtils.isBlank(req.getEmailId())) {
 					list.add(new ErrorList("1","EmailId","Please enter email"));
@@ -131,7 +131,10 @@ public class MadisonAdminValidation {
 
 			}else if(regexVal(req.getEmailId(), EMAIL)) {
 				list.add(new ErrorList("1","EmailId","Please enter valid email"));
-			}if(StringUtils.isBlank(req.getLoginId())) {
+			}
+			
+		if("new".equalsIgnoreCase(req.getMode())) {
+			if(StringUtils.isBlank(req.getLoginId())) {
 				list.add(new ErrorList("101","LoginId","Please enter loginId"));
 			}if(StringUtils.isBlank(req.getPassword())) {
 				list.add(new ErrorList("101","Password","Please enter password"));
@@ -144,6 +147,7 @@ public class MadisonAdminValidation {
 					list.add(new ErrorList("1","Password","Password does not matched"));
 				}
 			}
+		}
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -207,7 +211,7 @@ public class MadisonAdminValidation {
 						Double minSiValue =Double.valueOf(p.getMinSiValue());
 						Double maxSiValue =Double.valueOf(p.getMaxSiValue());
 						
-						if(minSiValue>=maxSiValue && !"Third Party Only".equalsIgnoreCase(req.getPolicyType().get(i).getPolicyTypeId())) {
+						if(minSiValue>=maxSiValue && !"3".equalsIgnoreCase(req.getPolicyType().get(i).getPolicyTypeId())) {
 							list.add(new ErrorList(""+i+"","PolicyType","MinSiValue ("+minSiValue+") should not greater than or equal to MaxSiValue ("+maxSiValue+") "));
 
 						}

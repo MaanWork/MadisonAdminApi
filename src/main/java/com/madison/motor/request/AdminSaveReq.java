@@ -39,5 +39,7 @@ public class AdminSaveReq {
 	private String countryId;
 	@JsonProperty("BranchCode")
 	private String branchCode;
+	@JsonProperty("AttachedUw")
+	private String attachedUw;
 
 }

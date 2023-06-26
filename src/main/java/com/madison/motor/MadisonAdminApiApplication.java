@@ -1,4 +1,4 @@
-package com.madison.motor;
+	package com.madison.motor;
 
 import javax.persistence.EntityManager;
 

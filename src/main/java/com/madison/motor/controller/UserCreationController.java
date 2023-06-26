@@ -38,8 +38,8 @@ public class UserCreationController {
 	}
 	
 	@GetMapping("/editUserByAgencyCode")
-	public MadisonCommonRes editUserByAgencyCode(@RequestParam ("agencyCode") String agencyCode) {
-		return service.editUserByAgencyCode(agencyCode);
+	public MadisonCommonRes editUserByAgencyCode(@RequestParam ("agencyCode") String agencyCode,@RequestParam ("customerId") String customerId) {
+		return service.editUserByAgencyCode(agencyCode,customerId);
 	}
 	
 	@GetMapping("/getAdminDetailsByBranchCode")

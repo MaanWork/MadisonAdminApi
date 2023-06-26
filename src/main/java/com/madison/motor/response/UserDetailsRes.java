@@ -34,5 +34,7 @@ public class UserDetailsRes {
 	private String brokerName;
 	@JsonProperty("OaCode")
 	private String oaCode;
+	@JsonProperty("CustomerId")
+	private String customerId;
 	
 }

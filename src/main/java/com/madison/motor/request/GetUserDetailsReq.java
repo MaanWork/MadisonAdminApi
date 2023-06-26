@@ -9,6 +9,10 @@ public class GetUserDetailsReq {
 	
 	@JsonProperty("BranchCode")
 	private String branchCode;
-	@JsonProperty("BrokerCode")
-	private String BrokerCode;
+	
+	@JsonProperty("Borganization")
+	private String borganization;
+	
+	@JsonProperty("AgencyCode")
+	private String agencyCode;
 }

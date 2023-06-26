@@ -327,7 +327,7 @@ public class PortfolioServiceImpl implements PortfolioService{
 			Double policy_tax =0D;
 			Double net_premium=0D;
 			Double commision_fee=0D;
-			if(StringUtils.isEmpty(excessSign) && !"0".equals(excessAmount)) {
+			if(StringUtils.isNotBlank(excessSign) && !"0".equals(excessAmount)) {
 				if("_".equals(excessSign)) {
 					
 					after_excess =Double.valueOf(premium) - Double.valueOf(excessAmount) ;

@@ -126,6 +126,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 							.userName(p.get("username")==null?"":p.get("username").toString())
 							.userType(p.get("usertype")==null?"":p.get("usertype").toString())
 							.oaCode(p.get("oaCode")==null?"":p.get("oaCode").toString())
+							.customerId(p.get("customerId")==null?"":p.get("customerId").toString())
 							.build();
 					userRes.add(userDetailsRes);
 				});
@@ -143,10 +144,10 @@ public class UserCreationServiceImpl implements UserCreationService {
 	}
 
 	@Override
-	public MadisonCommonRes editUserByAgencyCode(String agencyCode) {
+	public MadisonCommonRes editUserByAgencyCode(String agencyCode,String customerId) {
 		MadisonCommonRes response = new MadisonCommonRes();
 		try {
-			Tuple user =query.editUserDetailsByAgencyCode(agencyCode);
+			Tuple user =query.editUserDetailsByAgencyCode(agencyCode,Long.valueOf(customerId));
 			if(user!=null) {
 				EditUserDetailsRes detailsRes =EditUserDetailsRes.builder()
 						.address1(user.get("address1")==null?"":user.get("address1").toString())
@@ -339,6 +340,7 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.userType(user.get("userid")==null?"":user.get("userid").toString())
 						.executiveId(user.get("acExecutiveId")==null?"":user.get("acExecutiveId").toString())
 						.approvedBy(user.get("approvedPreparedBy")==null?"":user.get("approvedPreparedBy").toString())
+						.rsaBrokerCode(user.get("rsaBrokerCode")==null?"":user.get("rsaBrokerCode").toString())
 						.build();
 				
 				response.setMessage("SUCCESS");
@@ -400,12 +402,17 @@ public class UserCreationServiceImpl implements UserCreationService {
 	@Override
 	public MadisonCommonRes saveUser(UserSaveReq req) {
 		MadisonCommonRes response =new MadisonCommonRes();
+		List<ErrorList> error = new ArrayList<ErrorList>();
 		log.info("saveUser request :"+cs.printReq(req));
 		try {
-			List<ErrorList> error =validation.validateUser(req);
+				error =validation.validateUser(req);
+		if("new".equalsIgnoreCase(req.getMode())) {
+			if(req.getLoginId().equalsIgnoreCase(query.getLoginByLoginId(req.getLoginId()))) {
+				error.add(new ErrorList("1","Login","LoginId Already Exist"));
+			}
+		}
 			if(CollectionUtils.isEmpty(error)) {
 				String agencyCode="";
-				String customerId ="";
 				if(StringUtils.isBlank(req.getAgencyCode())) {
 					agencyCode =personalRepo.getAgencyCode(req.getBranchCode());
 					personalRepo.updateAgencyCode(Long.valueOf(agencyCode)+1,req.getBranchCode());
@@ -494,7 +501,8 @@ public class UserCreationServiceImpl implements UserCreationService {
 			e.printStackTrace();
 			log.error(e);
 			response.setMessage("FAILED");
-			response.setResponse("User creation failed. Contact Admin..!");
+			error.add(new ErrorList("1","UserCreation","User creation failed. Contact Admin..!"));
+			response.setErrors(error);
 		}
 		return response;
 	}
@@ -611,7 +619,8 @@ public class UserCreationServiceImpl implements UserCreationService {
 					.appId("16")
 					.pwdCount("0")
 					.userMail(req.getEmailid())
-					.attachedUw(req.getBrokerCode())
+					.attachedUw(req.getAttachedUw())
+					.brokerCodes(req.getBrokerCode())
 					.attachedBranch(req.getAttachedBranch())
 					.mobileNo(req.getMobileNo())
 					.entryDate(new Date())
@@ -635,9 +644,15 @@ public class UserCreationServiceImpl implements UserCreationService {
 	@Override
 	public MadisonCommonRes createBroker(BrokerSaveReq req) {
 		MadisonCommonRes response = new MadisonCommonRes();
+		log.info("createBroker request :"+cs.printReq(req));
 		try {
-			//List<ErrorList> list =validation.validateBroker(req);
-			List<ErrorList> list = new ArrayList<>();
+			List<ErrorList> list =validation.validateBroker(req);
+		
+			if("new".equalsIgnoreCase(req.getMode())) {
+				if(req.getLoginId().equalsIgnoreCase(query.getLoginByLoginId(req.getLoginId()))) {
+					list.add(new ErrorList("1","Login","LoginId Already Exist"));
+				}
+			}
 			if(CollectionUtils.isEmpty(list)) {
 				String brokerCode =StringUtils.isBlank(req.getAgencyCode())?personalRepo.getBrokerCode():req.getAgencyCode();
 				Long customerId=StringUtils.isBlank(req.getCustomerId())?personalRepo.getCustomerId():Long.valueOf(req.getCustomerId());
@@ -680,23 +695,32 @@ public class UserCreationServiceImpl implements UserCreationService {
 				File destinationFile =new File(sourceFileName);
 				FileUtils.copyFile(sourceFile, destinationFile);
 			}
+			
+			String password="";
+			if(StringUtils.isBlank(req.getPassword())) {
+				password = loginMasterRepo.getPasswordByLoginId(req.getLoginId());
+			}
 				
 				LocalDate localDate =LocalDate.now().plusDays(45);
 				Date pass_date =Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+				LoginMaster lm = new LoginMaster();
+				if(StringUtils.isNotBlank(req.getAgencyCode())) {
+					lm = loginMasterRepo.findByAgencyCode(req.getAgencyCode());
+			}
 				LoginMaster loginMaster =LoginMaster.builder()
 						.oaCode(brokerCode)
 						.agencyCode(brokerCode)
 						.loginId(req.getLoginId())
 						.usertype("Broker")
 						.username(req.getFirstName())
-						.password(StringUtils.isBlank(req.getPassword())?"":CommonService.encrypt(req.getPassword()))
+						.password(StringUtils.isBlank(req.getPassword())?password:CommonService.encrypt(req.getPassword()))
 						.userid(new BigDecimal(1))
 						.accesstype("BOTH")
 						.rights("")
 						.lpass1("")
 						.lpass2("")
 						.lpass3("")
-						.passdate(pass_date)
+						.passdate(lm.getPassdate()==null?pass_date:lm.getPassdate())
 						.companyId("2")
 						.createdBy("Admin")
 						.status(StringUtils.isBlank(req.getStatus())?"Y":req.getStatus())
@@ -705,6 +729,9 @@ public class UserCreationServiceImpl implements UserCreationService {
 						//.referal("Y")
 						.appId("16")
 						.pwdCount("0")
+						.entryDate(lm.getEntryDate()==null?new Date():lm.getEntryDate())
+						.inceptionDate(lm.getInceptionDate()==null?new Date():lm.getInceptionDate())
+						.expiryDate(lm.getExpiryDate()==null?Date.from(LocalDate.now().plusYears(25).atStartOfDay(ZoneId.systemDefault()).toInstant()):lm.getExpiryDate())
 						.userMail(req.getEmailId())
 						.branchCode(req.getBranchCode())
 						.countryId(new BigDecimal(req.getCountryId()))
@@ -728,17 +755,20 @@ public class UserCreationServiceImpl implements UserCreationService {
 						.pobox(StringUtils.isBlank(req.getPoBox())?null:new BigDecimal(req.getPoBox()))
 						.fax(StringUtils.isBlank(req.getFax())?"":req.getFax())
 						.emirate(req.getCityId())
-						.status(StringUtils.isBlank(req.getStatus())?"":req.getStatus())
+						.status(StringUtils.isBlank(req.getStatus())?"Y":req.getStatus())
 						.customerId(new BigDecimal(pi.getCustomerId()))
 						.branchCode(req.getBranchCode())
 						.approvedPreparedBy(req.getApprovedBy())
 						.rsaBrokerCode(req.getBrokerCode())
-						.acExecutiveId(new BigDecimal(req.getExeutiveBDM()))
+						.acExecutiveId(StringUtils.isBlank(req.getExeutiveBDM())?null:new BigDecimal(req.getExeutiveBDM()))
 						.brokerType(req.getUserType())
 						.build();
 				bcmRepo.save(brokerCompanyMaster);
 				response.setMessage("SUCCESS");
-				response.setResponse("Broker saved successfully...");
+				Map<String,Object> result = new HashMap<String,Object>();
+				result.put("Message", "Broker saved successfully...");
+				result.put("AgencyCode", brokerCode);
+				response.setResponse(result);
 			}else {
 				response.setMessage("ERROR");
 				response.setResponse(list);

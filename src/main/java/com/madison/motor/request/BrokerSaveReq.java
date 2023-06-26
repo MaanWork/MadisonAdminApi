@@ -83,5 +83,7 @@ public class BrokerSaveReq {
 	private File file;;
 	@JsonProperty("CoreLoginId")
 	private String coreLoginId;
+	@JsonProperty("Mode")
+	private String mode;
 	
 }

@@ -17,7 +17,7 @@ public interface UserCreationService {
 
 	MadisonCommonRes getUserDetailsByBranchCode(GetUserDetailsReq req);
 
-	MadisonCommonRes editUserByAgencyCode(String agencyCode);
+	MadisonCommonRes editUserByAgencyCode(String agencyCode,String customerId);
 
 	MadisonCommonRes getAdminDetailsByBranchCode(String branchCode);
 

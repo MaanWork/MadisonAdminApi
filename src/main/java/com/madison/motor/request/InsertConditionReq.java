@@ -25,5 +25,8 @@ public class InsertConditionReq {
 	
 	@JsonProperty("Type")
 	private String type;
+	
+	@JsonProperty("Mode")
+	private String mode;
 
 }
